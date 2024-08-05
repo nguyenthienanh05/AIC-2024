@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import Modal from "./Modal";
 import VideoPlayer from "./VideoPlayer";
 
-const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore }) => {
+const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, index }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const BASE_URL = "https://storage.googleapis.com/aic_2024_data_bucket/";
 
@@ -37,7 +37,9 @@ const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore }) => {
           videoName={videoName}
           frameNumber={frameNumber}
           frameTime={frameTime}
-          fusedScore={roundedFusedScore}
+          fusedScore={fusedScore}
+          allFrames={allFrames}
+          currentIndex={index}
         >
           <VideoPlayer src={videoSrc} startTime={timestamp} />
         </Modal>
@@ -51,6 +53,8 @@ FrameDisplay.propTypes = {
   bgColor: PropTypes.string.isRequired,
   videoName: PropTypes.string.isRequired,
   fusedScore: PropTypes.number.isRequired,
+  allFrames: PropTypes.array.isRequired,
+  index: PropTypes.number.isRequired,
 };
 
 export default FrameDisplay;
