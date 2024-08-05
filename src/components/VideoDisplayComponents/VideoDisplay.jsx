@@ -16,6 +16,8 @@ const VideoDisplay = ({ videoName, frames, bgColor }) => {
             bgColor={bgColor} 
             videoName={videoName} 
             fusedScore={frame.fusedScore}
+            allFrames={frames}
+            index={index}
           />
         ))}
       </div>
