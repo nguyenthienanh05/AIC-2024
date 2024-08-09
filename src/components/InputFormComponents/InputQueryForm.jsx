@@ -35,7 +35,31 @@ const InputQueryForm = () => {
     e.preventDefault();
     if (isCurrentSceneQueryValid) {
       console.log('Query submitted:', { currentSceneQuery, nextScenesQuery, question });
-    
+      try {
+        const response = await fetch('http://127.0.0.1:5000/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: currentSceneQuery,
+            nextScenesQuery: nextScenesQuery,
+            question: question
+          }),
+        });
+  
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+  
+        const data = await response.json();
+        console.log('Query response:', data);
+        // Handle the response data here (e.g., update state, display results)
+      } catch (error) {
+        console.error('Error submitting query:', error);
+        alert('An error occurred while submitting the query. Please try again.');
+      }
+      
     } else {
       alert('Please input the query for the current scene.');
     }
