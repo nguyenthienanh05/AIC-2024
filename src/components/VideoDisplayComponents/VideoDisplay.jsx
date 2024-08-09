@@ -2,7 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import FrameDisplay from "./FrameDisplay";
 
-const VideoDisplay = ({ videoName, frames, bgColor }) => {
+const VideoDisplay = ({ videoName, frames, bgColor, isQueryAndQnA }) => {
   return (
     <div className={`mt-4 w-full ${bgColor} rounded-[30px] border-[3px] border-black`}>
       <h2 className="text-xl font-bold text-[#B91C1C] mb-2 ml-4">
@@ -18,6 +18,7 @@ const VideoDisplay = ({ videoName, frames, bgColor }) => {
             fusedScore={frame.fusedScore}
             allFrames={frames}
             index={index}
+            isQueryAndQnA={isQueryAndQnA}
           />
         ))}
       </div>
@@ -34,6 +35,7 @@ VideoDisplay.propTypes = {
   ).isRequired,
   videoName: PropTypes.string.isRequired,
   bgColor: PropTypes.string.isRequired,
+  isQueryAndQnA: PropTypes.bool,
 };
 
 export default VideoDisplay;

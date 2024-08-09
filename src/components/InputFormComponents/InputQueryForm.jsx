@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import InputBar from './InputBar';
-import QueryButton from './QueryButton';
+import React, { useState, useEffect } from "react";
+import InputBar from "./InputBar";
+import QueryButton from "./QueryButton";
 
 const InputQueryForm = () => {
-  const [currentSceneQuery, setCurrentSceneQuery] = useState('');
-  const [nextScenesQuery, setNextScenesQuery] = useState('');
-  const [question, setQuestion] = useState('');
+  const [currentSceneQuery, setCurrentSceneQuery] = useState("");
+  const [nextScenesQuery, setNextScenesQuery] = useState("");
+  const [question, setQuestion] = useState("");
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isCurrentSceneQueryValid, setIsCurrentSceneQueryValid] = useState(false);
+  const [isCurrentSceneQueryValid, setIsCurrentSceneQueryValid] =
+    useState(false);
   const [isQuestionValid, setIsQuestionValid] = useState(false);
 
   useEffect(() => {
@@ -17,60 +18,95 @@ const InputQueryForm = () => {
       setIsScrolled(scrollTop > 100);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleCurrentSceneQueryChange = (e) => {
     setCurrentSceneQuery(e.target.value);
-    setIsCurrentSceneQueryValid(e.target.value.trim() !== '');
+    setIsCurrentSceneQueryValid(e.target.value.trim() !== "");
   };
 
   const handleQuestionChange = (e) => {
     setQuestion(e.target.value);
-    setIsQuestionValid(e.target.value.trim() !== '');
+    setIsQuestionValid(e.target.value.trim() !== "");
   };
 
   const handleQuery = async (e) => {
     e.preventDefault();
     if (isCurrentSceneQueryValid) {
-      console.log('Query submitted:', { currentSceneQuery, nextScenesQuery, question });
+      console.log("Query submitted:", {
+        currentSceneQuery,
+        nextScenesQuery,
+        question,
+      });
       try {
-        const response = await fetch('http://127.0.0.1:5000/query', {
-          method: 'POST',
+        const response = await fetch("http://127.0.0.1:5000/query", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             query: currentSceneQuery,
             nextScenesQuery: nextScenesQuery,
-            question: question
+            question: question,
           }),
         });
-  
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-  
+
         const data = await response.json();
-        console.log('Query response:', data);
-        // Handle the response data here (e.g., update state, display results)
+        console.log("Query response:", data);
       } catch (error) {
-        console.error('Error submitting query:', error);
-        alert('An error occurred while submitting the query. Please try again.');
+        console.error("Error submitting query:", error);
+        alert(
+          "An error occurred while submitting the query. Please try again."
+        );
       }
-      
     } else {
-      alert('Please input the query for the current scene.');
+      alert("Please input the query for the current scene.");
     }
   };
 
-  const handleQueryAndQnA = (e) => {
+  const handleQueryAndQnA = async (e) => {
     e.preventDefault();
     if (isCurrentSceneQueryValid && isQuestionValid) {
-      console.log('Query and QnA submitted:', { currentSceneQuery, nextScenesQuery, question });
+      console.log("Query and QnA submitted:", {
+        currentSceneQuery,
+        nextScenesQuery,
+        question,
+      });
+      try {
+        const response = await fetch("http://127.0.0.1:5000/query", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: currentSceneQuery,
+            nextScenesQuery: nextScenesQuery,
+            question: question,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Query response:", data);
+      } catch (error) {
+        console.error("Error submitting query:", error);
+        alert(
+          "An error occurred while submitting the query. Please try again."
+        );
+      }
     } else {
-      alert('Please input both the query for the current scene and the question.');
+      alert(
+        "Please input both the query for the current scene and the question."
+      );
     }
   };
 
@@ -79,40 +115,48 @@ const InputQueryForm = () => {
   };
 
   return (
-    <div className={`transition-all duration-300 ${isScrolled ? 'fixed top-0 left-0 right-0 z-50' : ''}`}>
+    <div
+      className={`transition-all duration-300 ${
+        isScrolled ? "fixed top-0 left-0 right-0 z-50" : ""
+      }`}
+    >
       {isFormVisible && (
-        <form className={`max-w-[1342px] mx-auto p-4 bg-white shadow-md ${isScrolled ? 'rounded-b-lg' : ''}`}>
+        <form
+          className={`max-w-[1342px] mx-auto p-4 bg-white shadow-md ${
+            isScrolled ? "rounded-b-lg" : ""
+          }`}
+        >
           <div className="flex flex-col space-y-1">
-            <InputBar 
-              placeholder="Input the query for the current scene (required)" 
-              bgColor="bg-[#FFFED8]" 
+            <InputBar
+              placeholder="Input the query for the current scene (required)"
+              bgColor="bg-[#FFFED8]"
               value={currentSceneQuery}
               onChange={handleCurrentSceneQueryChange}
               required
             />
-            <InputBar 
-              placeholder="Input the query for the next scenes (optional)" 
-              bgColor="bg-[#D3F2FF]" 
+            <InputBar
+              placeholder="Input the query for the next scenes (optional)"
+              bgColor="bg-[#D3F2FF]"
               value={nextScenesQuery}
               onChange={(e) => setNextScenesQuery(e.target.value)}
             />
-            <InputBar 
-              placeholder="Input the question (required for Query and QnA)" 
-              bgColor="bg-[#FFDDBB]" 
+            <InputBar
+              placeholder="Input the question (required for Query and QnA)"
+              bgColor="bg-[#FFDDBB]"
               value={question}
               onChange={handleQuestionChange}
             />
             <div className="flex justify-center space-x-4 mt-2">
-              <QueryButton 
-                text="Query" 
-                bgColor="bg-[#8CFF84]" 
-                onClick={handleQuery} 
+              <QueryButton
+                text="Query"
+                bgColor="bg-[#8CFF84]"
+                onClick={handleQuery}
                 disabled={!isCurrentSceneQueryValid}
               />
-              <QueryButton 
-                text="Query and QnA" 
-                bgColor="bg-[#FF7375]" 
-                onClick={handleQueryAndQnA} 
+              <QueryButton
+                text="Query and QnA"
+                bgColor="bg-[#FF7375]"
+                onClick={handleQueryAndQnA}
                 disabled={!isCurrentSceneQueryValid || !isQuestionValid}
               />
             </div>
@@ -123,7 +167,7 @@ const InputQueryForm = () => {
         onClick={toggleFormVisibility}
         className={`fixed top-2 right-2 cursor-pointer bg-blue-500 text-white px-2 py-1 text-sm rounded-full shadow-lg hover:bg-blue-600 transition-colors`}
       >
-        {isFormVisible ? '−' : '+'}
+        {isFormVisible ? "−" : "+"}
       </button>
     </div>
   );

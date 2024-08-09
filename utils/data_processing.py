@@ -30,8 +30,8 @@ def read_files_from_directory(directory_path):
     return documents
 
 # Read documents from both directories
-dir1 = "/Users/albuscorleone/Documents/Schoolwork/Major/AI/AIO2024/AI-Challenge/TestFeature/L01_V001_description_full"
-dir2 = "/Users/albuscorleone/Documents/Schoolwork/Major/AI/AIO2024/AI-Challenge/TestFeature/L01_V002_desciption_full"
+dir1 = "/Users/vinhvu/L01_V001_description_full"
+dir2 = "/Users/vinhvu/L01_V002_desciption_full"
 
 print("Reading documents...")
 documents = read_files_from_directory(dir1) + read_files_from_directory(dir2)

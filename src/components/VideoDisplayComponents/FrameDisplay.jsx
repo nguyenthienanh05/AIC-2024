@@ -3,9 +3,9 @@ import PropTypes from "prop-types";
 import Modal from "./Modal";
 import VideoPlayer from "./VideoPlayer";
 
-const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, index }) => {
+const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, index, isQueryAndQnA }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const BASE_URL = "https://storage.googleapis.com/aic_2024_data_bucket/";
+  const BASE_URL = "https://storage.googleapis.com/aic_hieu/";
 
   const extractNumbers = (path) => {
     const match = path.match(/frame_(\d{4})_(\d+)\.png/);
@@ -40,6 +40,7 @@ const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, in
           fusedScore={fusedScore}
           allFrames={allFrames}
           currentIndex={index}
+          isQueryAndQnA={isQueryAndQnA}
         >
           <VideoPlayer src={videoSrc} startTime={timestamp} />
         </Modal>
@@ -55,6 +56,7 @@ FrameDisplay.propTypes = {
   fusedScore: PropTypes.number.isRequired,
   allFrames: PropTypes.array.isRequired,
   index: PropTypes.number.isRequired,
+  isQueryAndQnA: PropTypes.bool,
 };
 
 export default FrameDisplay;

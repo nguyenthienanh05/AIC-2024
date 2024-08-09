@@ -5,7 +5,7 @@ import { Storage } from '@google-cloud/storage';
 const storage = new Storage();
 
 // The name of the bucket to access
-const bucketName = 'aic_2024_data_bucket';
+const bucketName = 'aic_hieu';
 
 export async function listFiles(videoPrefix) {
   const directory = `${videoPrefix}/scenes/`;
