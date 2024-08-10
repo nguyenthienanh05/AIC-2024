@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import InputBar from "./InputBar";
 import QueryButton from "./QueryButton";
+import PropTypes from "prop-types";
 
-const InputQueryForm = () => {
+const sortDataByFirstFrameScore = (data) => {
+  return Object.fromEntries(
+    Object.entries(data).sort((a, b) => {
+      const scoreA = a[1][0]?.fusedScore || 0;
+      const scoreB = b[1][0]?.fusedScore || 0;
+      return scoreB - scoreA;
+    })
+  );
+};
+
+const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
   const [currentSceneQuery, setCurrentSceneQuery] = useState("");
   const [nextScenesQuery, setNextScenesQuery] = useState("");
   const [question, setQuestion] = useState("");
   const [isFormVisible, setIsFormVisible] = useState(true);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isCurrentSceneQueryValid, setIsCurrentSceneQueryValid] =
     useState(false);
   const [isQuestionValid, setIsQuestionValid] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      setIsScrolled(scrollTop > 100);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const handleCurrentSceneQueryChange = (e) => {
     setCurrentSceneQuery(e.target.value);
@@ -41,7 +41,8 @@ const InputQueryForm = () => {
         question,
       });
       try {
-        const response = await fetch("http://127.0.0.1:5000/query", {
+        setIsLoading(true);
+        const response = await fetch("https://backend-altdfjk3ia-as.a.run.app/query", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -58,12 +59,18 @@ const InputQueryForm = () => {
         }
 
         const data = await response.json();
-        console.log("Query response:", data);
+        const sortedData = sortDataByFirstFrameScore(data);
+        sortedData.isQueryAndQnA = false;
+        console.log("Query response:", sortedData);
+        console.log(sortedData.isQueryAndQnA);
+        onQueryResponse(sortedData);
       } catch (error) {
         console.error("Error submitting query:", error);
         alert(
           "An error occurred while submitting the query. Please try again."
         );
+      } finally {
+        setIsLoading(false);
       }
     } else {
       alert("Please input the query for the current scene.");
@@ -79,6 +86,7 @@ const InputQueryForm = () => {
         question,
       });
       try {
+        setIsLoading(true);
         const response = await fetch("http://127.0.0.1:5000/query", {
           method: "POST",
           headers: {
@@ -96,12 +104,17 @@ const InputQueryForm = () => {
         }
 
         const data = await response.json();
-        console.log("Query response:", data);
+        const sortedData = sortDataByFirstFrameScore(data);
+        sortedData.isQueryAndQnA = true;
+        console.log("Query response:", sortedData);
+        console.log(sortedData.isQueryAndQnA);
+        onQueryResponse(sortedData);
       } catch (error) {
         console.error("Error submitting query:", error);
         alert(
           "An error occurred while submitting the query. Please try again."
         );
+        setIsLoading(false);
       }
     } else {
       alert(
@@ -115,16 +128,10 @@ const InputQueryForm = () => {
   };
 
   return (
-    <div
-      className={`transition-all duration-300 ${
-        isScrolled ? "fixed top-0 left-0 right-0 z-50" : ""
-      }`}
-    >
+    <div className="top-0 z-50">
       {isFormVisible && (
         <form
-          className={`max-w-[1342px] mx-auto p-4 bg-white shadow-md ${
-            isScrolled ? "rounded-b-lg" : ""
-          }`}
+          className={`max-w-[1342px] mx-auto p-4 bg-white shadow-md rounded-b-lg`}
         >
           <div className="flex flex-col space-y-1">
             <InputBar
@@ -171,6 +178,11 @@ const InputQueryForm = () => {
       </button>
     </div>
   );
+};
+
+InputQueryForm.propTypes = {
+  onQueryResponse: PropTypes.func.isRequired,
+  setIsLoading: PropTypes.func.isRequired,
 };
 
 export default InputQueryForm;
