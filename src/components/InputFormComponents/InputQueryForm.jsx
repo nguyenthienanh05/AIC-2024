@@ -32,6 +32,19 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
     setIsQuestionValid(e.target.value.trim() !== "");
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isCurrentSceneQueryValid) {
+        if (isQuestionValid) {
+          handleQueryAndQnA(e);
+        } else {
+          handleQuery(e);
+        }
+      }
+    }
+  };
+
   const handleQuery = async (e) => {
     e.preventDefault();
     if (isCurrentSceneQueryValid) {
@@ -139,6 +152,7 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
               bgColor="bg-[#FFFED8]"
               value={currentSceneQuery}
               onChange={handleCurrentSceneQueryChange}
+              onKeyDown={handleKeyPress}
               required
             />
             <InputBar
@@ -146,12 +160,14 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
               bgColor="bg-[#D3F2FF]"
               value={nextScenesQuery}
               onChange={(e) => setNextScenesQuery(e.target.value)}
+              onKeyDown={handleKeyPress}
             />
             <InputBar
               placeholder="Input the question (required for Query and QnA)"
               bgColor="bg-[#FFDDBB]"
               value={question}
               onChange={handleQuestionChange}
+              onKeyDown={handleKeyPress}
             />
             <div className="flex justify-center space-x-4 mt-2">
               <QueryButton

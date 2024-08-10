@@ -142,4 +142,9 @@ def perform_query():
 
 
 if __name__ == '__main__':
+    try:
+        load_index()  # Load the index once when the application starts
+    except Exception as e:
+        app.logger.error(f"Failed to load index: {str(e)}")
+        app.logger.error(traceback.format_exc())
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

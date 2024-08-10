@@ -59,7 +59,7 @@ const Modal = ({
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
         onClose();
-      } else if (event.shiftKey) {
+      } else if (event.shiftKey && !event.metaKey && !event.ctrlKey) {
         if (event.key === "ArrowRight") {
           handleNext();
         } else if (event.key === "ArrowLeft") {

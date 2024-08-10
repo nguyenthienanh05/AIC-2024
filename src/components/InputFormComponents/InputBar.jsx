@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 
-const InputBar = ({ placeholder, bgColor, value, onChange, required }) => {
+const InputBar = ({ placeholder, bgColor, value, onChange, onKeyDown, required }) => {
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -33,6 +33,7 @@ const InputBar = ({ placeholder, bgColor, value, onChange, required }) => {
           onChange(e);
           handleInputChange(e);
         }}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         aria-label="Query input"
         className={`w-full min-h-[80px] px-6 py-4 text-lg ${bgColor} rounded-[30px] border-[3px] border-black focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500 resize-none overflow-hidden pr-10`}
@@ -67,6 +68,7 @@ InputBar.propTypes = {
   bgColor: PropTypes.string,
   value: PropTypes.string,
   onChange: PropTypes.func,
+  onKeyDown: PropTypes.func,
   required: PropTypes.bool,
 };
 
