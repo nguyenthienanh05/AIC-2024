@@ -5,7 +5,6 @@ from llama_index.llms.gemini import Gemini
 from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.core import VectorStoreIndex, Settings
 
-
 # Set your Google API key
 GOOGLE_API_KEY = "AIzaSyBhJO0pCWWtobW17U2L5QX3avujp0Vf9DM"
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
@@ -17,6 +16,7 @@ embed_model = GeminiEmbedding(model_name="models/text-embedding-004", api_key=GO
 # Set the Gemini LLM as the default LLM in Settings
 Settings.llm = llm
 Settings.embed_model = embed_model
+
 
 # Function to read files from a directory
 def read_files_from_directory(directory_path):
@@ -31,17 +31,28 @@ def read_files_from_directory(directory_path):
             documents.append(Document(text=content, metadata={"source": node_source}))
     return documents
 
-# TODO: Change dir
-dir1 = "/Users/vinhvu/thienanh1"
-dir2 = "/Users/vinhvu/thienanh2"
-dir3 = "/Users/vinhvu/thienanh3"
+# base_dir = "C:\Users\ASUS\OneDrive\Desktop\Data\new_data"
+base_dir = os.path.join("C:", os.sep, "Users", "ASUS", "OneDrive", "Desktop", "Data", "new_data")
+video_folders = [os.path.join(base_dir, d) for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
 
-print("Reading documents...")
-documents = read_files_from_directory(dir1) + read_files_from_directory(dir2) + read_files_from_directory(dir3)
+documents = []
+for video_folder in video_folders:
+    description_folder = os.path.join(video_folder, "description")
+    if os.path.isdir(description_folder):
+        documents += read_files_from_directory(description_folder)
+
+# # TODO: Change dir
+# dir1 = "/Users/vinhvu/thienanh1"
+# dir2 = "/Users/vinhvu/thienanh2"
+# dir3 = "/Users/vinhvu/thienanh3"
+
+# print("Reading documents...")
+# documents = read_files_from_directory(dir1) + read_files_from_directory(dir2) + read_files_from_directory(dir3)
 
 # Create nodes
 print("Creating nodes...")
-nodes = [TextNode(text=doc.text, id_=f"node_{i+1}", metadata=doc.metadata) for i, doc in tqdm(enumerate(documents), total=len(documents), desc="Creating nodes")]
+nodes = [TextNode(text=doc.text, id_=f"node_{i + 1}", metadata=doc.metadata) for i, doc in
+         tqdm(enumerate(documents), total=len(documents), desc="Creating nodes")]
 
 # Create VectorStoreIndex
 print("Creating VectorStoreIndex...")

@@ -20,7 +20,6 @@ import sys
 from contextlib import redirect_stdout
 from collections import defaultdict
 import re
-
 from flask_cors import CORS, cross_origin
 
 
@@ -46,9 +45,11 @@ Settings.embed_model = embed_model
 # Global variables to hold the loaded index and retrievers
 loaded_index = None
 query_engine = None
+fusion_retriever = None
+
 
 def load_index():
-    global loaded_index, query_engine
+    global loaded_index, query_engine, fusion_retriever
     print("Loading the saved index...")
     storage_context = StorageContext.from_defaults(persist_dir="./utils/saved_index")
     loaded_index = load_index_from_storage(storage_context)
@@ -64,7 +65,6 @@ def load_index():
     query_engine = RetrieverQueryEngine(retriever=fusion_retriever)
 
 
-
 @app.route("/")
 def hello_world():
     """Example Hello World route."""
@@ -75,6 +75,7 @@ def hello_world():
         app.logger.error(traceback.format_exc())
     name = os.environ.get("NAME", "Worldsdklcvgj")
     return f"Hellosdfasd {name}!!!!!!!!!!!!"
+
 
 @app.route('/query', methods=['POST'])
 def perform_query():
@@ -88,25 +89,32 @@ def perform_query():
         return jsonify({"error": "No query provided"}), 400
 
     try:
-        # Step 1: Capture the stdout
-        buffer = io.StringIO()
-        with redirect_stdout(buffer):
-            # Step 2: Call query_engine.query
-            response = query_engine.query(query)
+        # # Step 1: Capture the stdout
+        # buffer = io.StringIO()
+        # with redirect_stdout(buffer):
+        #     # Step 2: Call query_engine.query
+        #     response = query_engine.query(query)
+
+        query_bundle = QueryBundle(query)
+        final_results = fusion_retriever._retrieve(query_bundle)
+        fused_results = ""
+
+        for final_result in final_results:
+            fused_results += f"Node ID: {final_result.id_}, Source: {final_result.node.metadata.get('source')}, Fused Score: {final_result.score}\n"
 
         # Step 3: Get the captured output as a string
-        output = buffer.getvalue()
+        # output = buffer.getvalue()
 
         # Step 4: Extract the relevant part of the output
-        start_marker = "Fused and reranked results:"
-        end_marker = "Top-k Document Contents:"
-        start_index = output.find(start_marker)
-        end_index = output.find(end_marker, start_index)
+        # start_marker = "Fused and reranked results:"
+        # end_marker = "Top-k Document Contents:"
+        # start_index = output.find(start_marker)
+        # end_index = output.find(end_marker, start_index)
 
-        if start_index != -1 and end_index != -1:
-            fused_results = output[start_index + len(start_marker):end_index].strip()
-        else:
-            fused_results = "Fused results not found in the output."
+        # if start_index != -1 and end_index != -1:
+        #     fused_results = output[start_index + len(start_marker):end_index].strip()
+        # else:
+        #     fused_results = "Fused results not found in the output."
 
         print(fused_results)
         pattern = r'Node ID: \S+, Source: response_(L02_V\d+)_frame_(\d{4})_(\d{8})\.png\.txt, Fused Score: (\d+\.\d+)'
@@ -137,8 +145,6 @@ def perform_query():
         app.logger.error(f"An error occurred while processing the query: {str(e)}")
         app.logger.error(traceback.format_exc())
         return jsonify({"error": "An internal server error occurred. Please check the logs for more details."}), 500
-
-
 
 
 if __name__ == '__main__':

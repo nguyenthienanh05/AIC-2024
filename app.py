@@ -23,7 +23,6 @@ import re
 
 from flask_cors import CORS, cross_origin
 
-
 app = Flask(__name__)
 CORS(app, resources={r"/query": {
     "origins": ["http://localhost:5173"],
@@ -47,6 +46,7 @@ Settings.embed_model = embed_model
 loaded_index = None
 query_engine = None
 
+
 def load_index():
     global loaded_index, query_engine
     print("Loading the saved index...")
@@ -63,11 +63,12 @@ def load_index():
     fusion_retriever = FusionRetriever([vector_retriever, bm25_retriever], similarity_top_k=50)
     query_engine = RetrieverQueryEngine(retriever=fusion_retriever)
 
+
 @app.route('/query', methods=['POST'])
 def perform_query():
     data = request.get_json()
     query = data.get('query')
-    
+
     print(f"Received query: {query}")
 
     # Process the query here...
@@ -98,7 +99,7 @@ def perform_query():
         print(fused_results)
         pattern = r'Node ID: \S+, Source: response_(L02_V\d+)_frame_(\d{4})_(\d{8})\.png\.txt, Fused Score: (\d+\.\d+)'
         data = defaultdict(list)
-        
+
         matches = re.findall(pattern, fused_results)
 
         for match in matches:
@@ -106,7 +107,7 @@ def perform_query():
             frame_id = f"{video_id}_frame_{match[1]}_{match[2]}"
             fused_score = float(match[3])
             path = f"{video_id}/scene/{frame_id}.png"
-            
+
             data[video_id].append({
                 "path": path,
                 "fusedScore": fused_score,
@@ -124,8 +125,6 @@ def perform_query():
         app.logger.error(f"An error occurred while processing the query: {str(e)}")
         app.logger.error(traceback.format_exc())
         return jsonify({"error": "An internal server error occurred. Please check the logs for more details."}), 500
-
-
 
 
 if __name__ == '__main__':
