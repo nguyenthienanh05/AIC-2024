@@ -1,37 +1,43 @@
+from utils.retrieval_load_index import FusionRetriever
+from tqdm import tqdm
+from llama_index.core.schema import TextNode, Document
 from flask import Flask, request, jsonify
-# from google.cloud import storage
-from typing import List
-from llama_index.core import StorageContext, load_index_from_storage
+import time
+from elasticsearch import Elasticsearch
+from llama_index.core import StorageContext
 from llama_index.llms.gemini import Gemini
 from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.core import VectorStoreIndex, Settings
 from llama_index.retrievers.bm25 import BM25Retriever
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core import QueryBundle
-from llama_index.core.schema import NodeWithScore
-from llama_index.core.retrievers import BaseRetriever
-from llama_index.core.schema import TextNode, Document, NodeWithScore
-from utils.retrieval_load_index import FusionRetriever
 import os
 import traceback
-import logging
-import io
 import sys
-from contextlib import redirect_stdout
+from llama_index.vector_stores.elasticsearch import ElasticsearchStore
+from llama_index.core.storage.docstore import SimpleDocumentStore
 from collections import defaultdict
 import re
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
+from dotenv import load_dotenv
+import asyncio
+from asgiref.wsgi import WsgiToAsgi
+from hypercorn.config import Config
+from hypercorn.asyncio import serve
 
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/query": {
-    "origins": ["http://localhost:5173", "http://localhost:1", "https://ai-challenge-2024-431017.web.app" ],
+    "origins": ["http://localhost:5173", "http://localhost:1", "https://ai-challenge-2024-431017.web.app"],
     "methods": ["POST"],
     "allow_headers": ["Content-Type"]
 }})
 
 # Set your Google API key
-GOOGLE_API_KEY = "AIzaSyBhJO0pCWWtobW17U2L5QX3avujp0Vf9DM"
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+print(GOOGLE_API_KEY)
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
 # Initialize Gemini LLM and Embedding models
@@ -50,19 +56,49 @@ fusion_retriever = None
 
 def load_index():
     global loaded_index, query_engine, fusion_retriever
-    print("Loading the saved index...")
-    storage_context = StorageContext.from_defaults(persist_dir="./utils/saved_index")
-    loaded_index = load_index_from_storage(storage_context)
+    print("Loading the saved index from Elasticsearch...")
 
-    # Create retrievers 
+    # Create ElasticSearch vector store
+    es_url = os.getenv("ELASTICSEARCH_URL")
+    es_user = os.getenv("ELASTICSEARCH_USER")
+    es_password = os.getenv("ELASTICSEARCH_PASSWORD")
+
+    # Modify the ElasticsearchStore initialization
+    vector_store = ElasticsearchStore(
+        # es_client=es_client,
+        es_url=es_url,
+        index_name="aic_index_test",
+        es_user=es_user,
+        es_password=es_password,
+        distance_strategy="COSINE",
+        content_field="content",  # Specify the field to store document content
+        metadata_field="metadata"  # Specify the field to store metadata
+    )
+
+    docstore = SimpleDocumentStore.from_persist_dir("./utils/saved_index")
+
+    storage_context = StorageContext.from_defaults(
+        persist_dir="./utils/storage",
+        vector_store=vector_store
+    )
+
+    loaded_index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
+
+    print(loaded_index.vector_store)
+
+    print(f"Number of documents in loaded index: {len(docstore.docs)}")
+
+    # Create retrievers
     print("Creating retrievers...")
     vector_retriever = loaded_index.as_retriever(similarity_top_k=50)
-    bm25_retriever = BM25Retriever.from_defaults(docstore=loaded_index.docstore, similarity_top_k=50)
+    bm25_retriever = BM25Retriever.from_defaults(docstore=docstore, similarity_top_k=50)
 
     # Create FusionRetriever and QueryEngine
     print("Creating FusionRetriever and QueryEngine...")
     fusion_retriever = FusionRetriever([vector_retriever, bm25_retriever], similarity_top_k=50)
     query_engine = RetrieverQueryEngine(retriever=fusion_retriever)
+
+    print("Index loaded successfully from Elasticsearch.")
 
 
 @app.route("/")
@@ -78,10 +114,11 @@ def hello_world():
 
 
 @app.route('/query', methods=['POST'])
-def perform_query():
+async def perform_query():
     data = request.get_json()
     query = data.get('query')
-    
+    print(query)
+
     print(f"Received query: {query}")
 
     # Process the query here...
@@ -89,45 +126,31 @@ def perform_query():
         return jsonify({"error": "No query provided"}), 400
 
     try:
-        # # Step 1: Capture the stdout
-        # buffer = io.StringIO()
-        # with redirect_stdout(buffer):
-        #     # Step 2: Call query_engine.query
-        #     response = query_engine.query(query)
-
+        start_time = time.time()
         query_bundle = QueryBundle(query)
-        final_results = fusion_retriever._retrieve(query_bundle)
+        final_results = await fusion_retriever._aretrieve(query_bundle)
         fused_results = ""
+
+        print("response")
 
         for final_result in final_results:
             fused_results += f"Node ID: {final_result.id_}, Source: {final_result.node.metadata.get('source')}, Fused Score: {final_result.score}\n"
 
-        # Step 3: Get the captured output as a string
-        # output = buffer.getvalue()
-
-        # Step 4: Extract the relevant part of the output
-        # start_marker = "Fused and reranked results:"
-        # end_marker = "Top-k Document Contents:"
-        # start_index = output.find(start_marker)
-        # end_index = output.find(end_marker, start_index)
-
-        # if start_index != -1 and end_index != -1:
-        #     fused_results = output[start_index + len(start_marker):end_index].strip()
-        # else:
-        #     fused_results = "Fused results not found in the output."
-
         print(fused_results)
-        pattern = r'Node ID: \S+, Source: response_(L02_V\d+)_frame_(\d{4})_(\d{8})\.png\.txt, Fused Score: (\d+\.\d+)'
+        end_time = time.time()
+        print(f"Time taken to execute query: {end_time - start_time:.2f} seconds")
+
+        pattern = r'Node ID: \S+, Source: response_(L0\d_V\d+)_frame_(\d{4})_(\d{8})_(\d+)_(\d+)\.png\.txt, Fused Score: (\d+\.\d+)'
         data = defaultdict(list)
-        
+
         matches = re.findall(pattern, fused_results)
 
         for match in matches:
             video_id = match[0]
             frame_id = f"{video_id}_frame_{match[1]}_{match[2]}"
-            fused_score = float(match[3])
+            fused_score = float(match[5])
             path = f"{video_id}/scene/{frame_id}.png"
-            
+
             data[video_id].append({
                 "path": path,
                 "fusedScore": fused_score,
@@ -150,7 +173,16 @@ def perform_query():
 if __name__ == '__main__':
     try:
         load_index()  # Load the index once when the application starts
+    except ValueError as ve:
+        print(f"Error: {str(ve)}")
+        print("Please run the data ingestion process to populate Elasticsearch before starting the application.")
+        sys.exit(1)
     except Exception as e:
-        app.logger.error(f"Failed to load index: {str(e)}")
-        app.logger.error(traceback.format_exc())
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+        print(f"An unexpected error occurred while loading the index: {str(e)}")
+        print(traceback.format_exc())
+        sys.exit(1)
+    
+    asgi_app = WsgiToAsgi(app)
+    config = Config()
+    config.bind = ["0.0.0.0:8080"]
+    asyncio.run(serve(asgi_app, config))

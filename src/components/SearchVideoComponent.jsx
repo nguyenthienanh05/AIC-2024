@@ -16,7 +16,7 @@ const SearchVideoButton = () => {
       const [, videoName, frameNumber, minutes, seconds] = match;
       // console.log(videoName, frameNumber, minutes, seconds);
       const timestamp = parseInt(minutes) * 60 + parseInt(seconds);
-      const videoSrc = `https://storage.googleapis.com/aic_hieu/${videoName}/${videoName}.mp4`;
+      const videoSrc = `https://storage.googleapis.com/demo100vid/${videoName}/${videoName}.mp4`;
       // console.log(videoSrc);
 
       setVideoDetails({

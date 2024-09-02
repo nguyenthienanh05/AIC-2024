@@ -1,14 +1,5 @@
-from llama_index.core import StorageContext
-from llama_index.core import load_index_from_storage
-import os
 from typing import List
-from tqdm import tqdm
-from llama_index.core.schema import TextNode, Document, NodeWithScore
-from llama_index.llms.gemini import Gemini
-from llama_index.embeddings.gemini import GeminiEmbedding
-from llama_index.core import VectorStoreIndex, Settings
-from llama_index.retrievers.bm25 import BM25Retriever
-from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.schema import NodeWithScore
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core import QueryBundle
 
@@ -42,9 +33,9 @@ def fuse_results(results_list, similarity_top_k: int = 3):
         reranked_nodes.append(text_to_node[text])
         reranked_nodes[-1].score = score
 
-    # print("\nFused and reranked results:")
-    # for node in reranked_nodes[:similarity_top_k]:
-    #     print(f"Node ID: {node.node.id_}, Source: {node.node.metadata['source']}, Fused Score: {node.score}")
+    print("\nFused and reranked results:")
+    for node in reranked_nodes[:similarity_top_k]:
+        print(f"Node ID: {node.node.id_}, Source: {node.node.metadata['source']}, Fused Score: {node.score}")
 
     return reranked_nodes[:similarity_top_k]
 
@@ -62,6 +53,20 @@ class FusionRetriever(BaseRetriever):
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         results_list = []
         for i, retriever in enumerate(self._retrievers):
+            print(retriever, i)
+            print(f"\nRetriever {i + 1} results:")
+            results = retriever.retrieve(query_bundle)
+            for node in results:
+                print(f"Node ID: {node.node.id_}, Score: {node.score}")
+            results_list.append(results)
+
+        final_results = fuse_results(results_list, similarity_top_k=self._similarity_top_k)
+    
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        # Implement your asynchronous retrieval logic here
+        results_list = []
+        for i, retriever in enumerate(self._retrievers):
+            # print(retriever, i)
             # print(f"\nRetriever {i + 1} results:")
             results = retriever.retrieve(query_bundle)
             # for node in results:
@@ -69,6 +74,7 @@ class FusionRetriever(BaseRetriever):
             results_list.append(results)
 
         final_results = fuse_results(results_list, similarity_top_k=self._similarity_top_k)
+
 
         # Display content of top-k documents
         # print("\nTop-k Document Contents:")

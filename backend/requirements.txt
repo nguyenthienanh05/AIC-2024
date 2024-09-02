@@ -7,3 +7,9 @@ llama-index-retrievers-bm25
 google-cloud-storage
 typing
 gunicorn
+llama-index-vector-stores-chroma
+nest-asyncio
+llama-index-vector-stores-elasticsearch
+elasticsearch
+asgiref
+hypercorn
