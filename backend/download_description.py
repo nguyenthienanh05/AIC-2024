@@ -32,8 +32,11 @@ def download_description_files(prefix):
             local_path = os.path.join('downloaded', blob.name)
             tasks.append((blob, local_path))
 
+    # Set the number of workers (executors) to 10
+    max_workers = 120
+
     # Use ThreadPoolExecutor to download files in parallel
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [executor.submit(download_blob, blob, local_path) for blob, local_path in tasks]
         for future in concurrent.futures.as_completed(futures):
             try:
@@ -46,7 +49,7 @@ def download_description_files(prefix):
 bucket_name = 'aic_videos_2024'
 
 # Set the prefix to match your directory structure
-prefix = 'L02_V'
+prefix = 'L12_V'
 
 # Call the function to download description files
 download_description_files(prefix)

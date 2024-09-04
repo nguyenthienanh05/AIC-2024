@@ -7,12 +7,20 @@ import { useState } from "react";
 function App() {
   const [updatedGroupedScenes, setUpdatedGroupedScenes] = useState({
     isQueryAndQnA: false,
-    L01_V002: [
+    L02_V001: [
       {
         fusedScore: 0.028068137824235385,
-        path: "L01_V002/scene/L01_V002_frame_0046_00140760_3519_2500.png",
+        path: "L02_V029/scene/L02_V029_frame_0038_00121000_3025_2500.png",
       },
-    ],
+      {
+        fusedScore: 0.02788769549651404,
+        path: "L02_V029/scene/L02_V029_frame_0038_00121000_3025_2500.png",
+      },
+      {
+        fusedScore: 0.0266900790166813,
+        path: "L02_V029/scene/L02_V029_frame_0038_00121000_3025_2500.png",
+      },
+    ]
   });
   const [isLoading, setIsLoading] = useState(false);
 

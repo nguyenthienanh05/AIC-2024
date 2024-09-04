@@ -7,11 +7,13 @@ const Modal = ({
   bgColor,
   videoName,
   frameNumber,
-  frameTime,
+  // frameTime,
   fusedScore,
   allFrames,
   currentIndex,
   timestamp,
+  frameIndex, // Nhận frameIndex
+  fps,
   isQueryAndQnA = false,
 }) => {
   const [currentModalIndex, setCurrentModalIndex] = useState(currentIndex);
@@ -24,10 +26,27 @@ const Modal = ({
   const [finalAnswer, setFinalAnswer] = useState("Final");
   const [isCopied, setIsCopied] = useState(false);
 
+  const [currentVideoTime, setCurrentVideoTime] = useState(timestamp);
+  const [tempFrameIndex, setTempFrameIndex] = useState(frameIndex);
+
   const handleSubmit = () => {
+    // const fps = 25; // Giả sử 30 khung hình/giây, điều chỉnh nếu khác
+    const calculatedFrameIndex = Math.floor(currentVideoTime * fps);
+    console.log(`Current frame index: ${calculatedFrameIndex}`);
     console.log(
-      `Submitted for video ${videoName}, frame ${frameNumber}, time ${frameTime}, score ${fusedScore}`
+      `Submitted for video ${videoName}, frame ${frameNumber}, time ${formatTime(currentVideoTime)}, temp_frame_index ${tempFrameIndex}, original_frame_index ${frameIndex}, score ${fusedScore}`
     );
+  };
+
+  const formatTime = (timeInSeconds) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const handleTimeUpdate = (newTime) => {
+    setCurrentVideoTime(newTime);
+    setTempFrameIndex(Math.floor(newTime * fps).toString().padStart(4, '0'));
   };
 
   const handleNext = () => {
@@ -107,13 +126,13 @@ const Modal = ({
                 Video {videoName}
               </h2>
               <p className="text-gray-600">
-                Frame: {currentFrameNumber}, Time: {currentFrameTime || frameTime}, Score:{" "}
-                {currentFrame?.fusedScore?.toFixed(4) || "N/A"}
+              Frame: {tempFrameIndex}, Time: {formatTime(currentVideoTime)}, Score:{" "}
+              {fusedScore.toFixed(4) || "N/A"}
               </p>
             </div>
             <button
               onClick={() => {
-                const info = `Video ${videoName} Frame: ${currentFrameNumber} Time: ${currentFrameTime || frameTime}`;
+                const info = `Video ${videoName} Frame: ${currentFrameNumber} Time: ${formatTime(currentVideoTime)} FPS: ${fps}`;
                 navigator.clipboard.writeText(info);
                 setIsCopied(true);
                 setTimeout(() => setIsCopied(false), 2000); // Reset icon after 2 seconds
@@ -154,7 +173,7 @@ const Modal = ({
         {isQueryAndQnA ? (
           <div className="flex">
             <div className="w-2/3 pr-4">
-              {React.cloneElement(children, { startTime: currentTimestamp })}
+            {React.cloneElement(children, { startTime: timestamp, frameIndex: frameIndex, onTimeUpdate: handleTimeUpdate })}
             </div>
             <div className="w-1/3 space-y-4">
               <div className="border border-gray-300 rounded bg-white">
@@ -168,7 +187,7 @@ const Modal = ({
             </div>
           </div>
         ) : (
-          React.cloneElement(children, { startTime: currentTimestamp })
+          React.cloneElement(children, { startTime: timestamp, frameIndex: frameIndex, onTimeUpdate: handleTimeUpdate })
         )}
         {isQueryAndQnA && (
           <div className="mt-4 grid grid-cols-2 gap-4">
@@ -211,6 +230,8 @@ Modal.propTypes = {
   allFrames: PropTypes.array.isRequired,
   currentIndex: PropTypes.number.isRequired,
   timestamp: PropTypes.number,
+  frameIndex: PropTypes.string, // Thêm prop frameIndex
+  fps: PropTypes.number, // Thêm fps vào đây
   isQueryAndQnA: PropTypes.bool,
 };
 

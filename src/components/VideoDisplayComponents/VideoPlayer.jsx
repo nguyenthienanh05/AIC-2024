@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 
 
-const VideoPlayer = ({ src, startTime }) => {
+const VideoPlayer = ({ src, startTime, frameIndex, onTimeUpdate  }) => {
   const videoRef = useRef(null);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
@@ -48,6 +48,15 @@ const VideoPlayer = ({ src, startTime }) => {
     setPlaybackSpeed(speeds[nextIndex]);
   };
 
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      // Chỉ gọi onTimeUpdate nếu nó là một hàm
+      if (typeof onTimeUpdate === 'function') {
+        onTimeUpdate(videoRef.current.currentTime);
+      }
+    }
+  };
+
   return (
     <div className="video-player-container">
       <video
@@ -56,6 +65,7 @@ const VideoPlayer = ({ src, startTime }) => {
         width="640"
         height="360"
         className="rounded-lg shadow-lg"
+        onTimeUpdate={handleTimeUpdate}
       >
         <source src={src} type="video/mp4" />
         Your browser does not support the video tag.
@@ -75,6 +85,8 @@ const VideoPlayer = ({ src, startTime }) => {
 VideoPlayer.propTypes = {
   src: PropTypes.string.isRequired,
   startTime: PropTypes.number.isRequired,
+  frameIndex: PropTypes.string,
+  onTimeUpdate: PropTypes.func.isRequired,
 };
 
 export default VideoPlayer;

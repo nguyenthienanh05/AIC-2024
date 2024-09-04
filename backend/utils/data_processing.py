@@ -1,54 +1,82 @@
+from oss2.exceptions import InvalidArgument
 from tqdm import tqdm
 from llama_index.core.schema import TextNode, Document
 import time
-from elasticsearch import Elasticsearch
 from llama_index.core import StorageContext
 from llama_index.llms.gemini import Gemini
 from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.core import VectorStoreIndex, Settings
 import os
+from elasticsearch import Elasticsearch
 from llama_index.vector_stores.elasticsearch import ElasticsearchStore
-from llama_index.core.storage.docstore import SimpleDocumentStore
-from llama_index.retrievers.bm25 import BM25Retriever
 from dotenv import load_dotenv
-import glob
+
 
 load_dotenv()
 
-# Set your Google API key
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-print(GOOGLE_API_KEY)
-os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+start = time.time()
 
 # Initialize Gemini LLM and Embedding models
-llm = Gemini(model="models/gemini-1.5-flash", api_key=GOOGLE_API_KEY)
-embed_model = GeminiEmbedding(model_name="models/text-embedding-004", api_key=GOOGLE_API_KEY)
+llm = Gemini(model="models/gemini-1.5-flash", api_key="AIzaSyDHalZZmUNwOG6RvQ5jedfI1ku_FYUitoM")
+embed_model = GeminiEmbedding(model_name="models/text-embedding-004", api_key="AIzaSyDHalZZmUNwOG6RvQ5jedfI1ku_FYUitoM")
 
 # Create ElasticSearch vector store
-es_url = os.getenv("ELASTICSEARCH_URL")
-es_user = os.getenv("ELASTICSEARCH_USER")
-es_password = os.getenv("ELASTICSEARCH_PASSWORD")
+es_user = "elastic"
+es_password = "NzQe2JxZSNKfAJSWaqUxvU19"
 
 es_client = Elasticsearch(
-    es_url,
-    basic_auth=(es_user, es_password) if es_user and es_password else None,
-    verify_certs=False  # Note: In production, you should verify certificates
+    cloud_id="aic_index"
+             ":YXNpYS1zb3V0aGVhc3QxLmdjcC5lbGFzdGljLWNsb3VkLmNvbTo0NDMkYjU0ZWM3MDNhMTIwNDdkZDlkYWFiY2NjZjA4MjhjNTkkMTRhMDgzMTBlMGNlNDdjYmE0ODlmMDgyMWE5NjdmY2I=",
+    basic_auth=("elastic", es_password)
 )
 
-# Modify the ElasticsearchStore initialization
+# Elasticsearch configuration
 vector_store = ElasticsearchStore(
-    es_url=es_url,
-    index_name="aic_index_test",
+    es_cloud_id="aic_index"
+                ":YXNpYS1zb3V0aGVhc3QxLmdjcC5lbGFzdGljLWNsb3VkLmNvbTo0NDMkYjU0ZWM3MDNhMTIwNDdkZDlkYWFiY2NjZjA4MjhjNTkkMTRhMDgzMTBlMGNlNDdjYmE0ODlmMDgyMWE5NjdmY2I=",
+    index_name="aic_index",
     es_user=es_user,
     es_password=es_password,
     distance_strategy="COSINE",
-    content_field="content",  # Specify the field to store document content
-    metadata_field="metadata"  # Specify the field to store metadata
+    content_field="content",
+    metadata_field="metadata",
 )
+
+# Create the new index with desired settings
+# es_client.indices.create(index="aic_index", body={
+#     "settings": {
+#         "index": {
+#             "max_result_window": 100000
+#         }
+#     },
+#     "mappings": {
+#         "properties": {
+#             "content": {"type": "text"},
+#             "metadata": {"type": "object"},
+#             "vector": {
+#                 "type": "dense_vector",
+#                 "dims": 768,  # Adjust this to match your embedding dimensions
+#                 "index": True,
+#                 "similarity": "cosine"
+#             }
+#         }
+#     }
+# })
+
+es_client.indices.put_settings(index="aic_index",
+                               settings={
+                                   "index": {
+                                       "max_result_window": 100000
+                                   }
+                               })
 
 # Set the Gemini LLM as the default LLM in Settings
 Settings.llm = llm
 Settings.embed_model = embed_model
+
+# Load existing index
+# print("Loading existing index...")
+# existing_index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
 
 
 # Function to read files from a directory
@@ -59,37 +87,28 @@ def read_files_from_directory(directory_path):
         file_path = os.path.join(directory_path, filename)
         with open(file_path, 'r', encoding='utf-8') as file:
             content = file.read()
-            # Extracting the desired format for node_source
             node_source = f"{filename}"
             documents.append(Document(text=content, metadata={"source": node_source}))
     return documents
 
 
-# def read_all_description_files(base_directory):
-#     documents = []
-#     # Recursively find all "description" directories
-#     pattern = os.path.join(base_directory, 'L0*_V00*', 'description')
-#     description_dirs = glob.glob(pattern)
-#     print(description_dirs)
-#
-#     for description_dir in tqdm(description_dirs, desc="Processing directories"):
-#         # Read all text files from the current description directory
-#         dir_documents = read_files_from_directory(description_dir)
-#         documents.extend(dir_documents)
-#
-#     return documents
+# Function to batch nodes
+def batch_nodes(nodes, batch_size):
+    for i in range(0, len(nodes), batch_size):
+        yield nodes[i:i + batch_size]
 
+
+# Read documents
 print("Reading documents...")
 documents = []
-for i in range(1, 32):
-    documents += read_files_from_directory(f'/Users/albuscorleone/Documents/Schoolwork/Major/AI/URA/BKInnovation/AIC-2024/backend/downloaded/L01_V0{i:02}/description')
-
-
-# TODO: Change dir
-print("Reading documents...")
-# documents = read_files_from_directory(dir1) + read_files_from_directory(dir2) + read_files_from_directory(dir3)
-
-# print(f"Number of documents loaded: {len(documents)}")
+for i in range(1, 4):
+    for j in range(1, 50):
+        directory_path = (f'/Users/albuscorleone/Documents/Schoolwork/Major/AI/URA/BKInnovation/AIC-2024/backend'
+                          f'/downloaded/L{i:02}_V0{j:02}/description')
+        # Check if the directory exists
+        if not os.path.exists(directory_path):
+            continue  # Skip if the directory does not exist
+        documents += read_files_from_directory(directory_path)
 
 # Create nodes
 print("Creating nodes...")
@@ -98,26 +117,27 @@ nodes = [TextNode(text=doc.text, id_=f"node_{i + 1}", metadata=doc.metadata) for
 
 print(f"Number of nodes created: {len(nodes)}")
 
-start = time.time()
-
-# Create VectorStoreIndex
-print("Creating VectorStoreIndex...")
-
-# Create Docstore
-docstore = SimpleDocumentStore()
-docstore.add_documents(nodes)
-docstore.persist('./saved_index/docstore.json')
-
-storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
-index = VectorStoreIndex(nodes=nodes, storage_context=storage_context)
-
-index.storage_context.persist()
-print("Index metadata saved locally.")
-
-print("Index created and stored in ElasticSearch.")
-print("Saving the index...")
-# No need to save the index locally as it's now in Elasticsearch
-print("Index saved successfully in Elasticsearch.")
 end = time.time()
 print(f"Time taken: {end - start} seconds")
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+# Update VectorStoreIndex in batches
+print("Updating VectorStoreIndex in batches...")
+batch_size = 10  # Điều chỉnh kích thước batch để phù hợp với giới hạn của API
+
+for batch in tqdm(batch_nodes(nodes, batch_size), total=len(nodes) // batch_size + 1, desc="Processing batches"):
+    # Tạo chỉ mục cho từng batch nhỏ
+    try:
+        index = VectorStoreIndex(nodes=batch, storage_context=storage_context)
+        # existing_index.insert_nodes(batch)
+        index.storage_context.persist()
+    except InvalidArgument as e:
+        if "Request payload size exceeds the limit" in str(e):
+            print(f"Error: {e}. Skipping batch {batch}.")
+        else:
+            raise e
+
+print("Index metadata saved locally.")
+print("Index created and stored in Elasticsearch.")
+print("Saving the index...")
+print("Index saved successfully in Elasticsearch.")

@@ -55,7 +55,7 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
       });
       try {
         setIsLoading(true);
-        const response = await fetch("http://127.0.0.1:8080/query", {
+        const response = await fetch("http://localhost:8080/query", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

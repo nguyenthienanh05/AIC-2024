@@ -9,15 +9,13 @@ const SearchVideoButton = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    const regex = /Video (\w+) Frame: (\d+) Time: (\d+):(\d+)/;
+    const regex = /Video (\w+) Frame: (\d+) Time: (\d+):(\d+) FPS: (\d+)/;
     const match = searchInput.match(regex);
 
     if (match) {
-      const [, videoName, frameNumber, minutes, seconds] = match;
-      // console.log(videoName, frameNumber, minutes, seconds);
+      const [, videoName, frameNumber, minutes, seconds, fps] = match;
       const timestamp = parseInt(minutes) * 60 + parseInt(seconds);
       const videoSrc = `https://storage.googleapis.com/demo100vid/${videoName}/${videoName}.mp4`;
-      // console.log(videoSrc);
 
       setVideoDetails({
         videoName,
@@ -25,11 +23,19 @@ const SearchVideoButton = () => {
         timestamp,
         videoSrc,
         frameTime: `${minutes}:${seconds.padStart(2, '0')}`,
+        frameIndex: frameNumber,
+        fps: parseInt(fps)
       });
       setIsModalOpen(true);
-      // console.log(videoDetails);
     } else {
-      alert('Invalid input format. Please use the format: Video L01_V002 Frame: 0279 Time: 15:57');
+      alert('Invalid input format. Please use the format: Video L01_V002 Frame: 0279 Time: 15:57 FPS: 30');
+    }
+  };
+
+  const handleTimeUpdate = (currentTime) => {
+    if (videoDetails) {
+      const calculatedFrameIndex = Math.floor(currentTime * videoDetails.fps);
+      console.log(`Current time: ${currentTime}, Frame index: ${calculatedFrameIndex}`);
     }
   };
 
@@ -40,7 +46,7 @@ const SearchVideoButton = () => {
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Video L01_V002 Frame: 0279 Time: 15:57"
+          placeholder="Video L01_V002 Frame: 0279 Time: 15:57 FPS: 30"
           className="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
@@ -61,9 +67,16 @@ const SearchVideoButton = () => {
           allFrames={[videoDetails]}
           currentIndex={0}
           timestamp={videoDetails.timestamp}
+          frameIndex={videoDetails.frameIndex}
+          fps={videoDetails.fps}
           isQueryAndQnA={false}
         >
-          <VideoPlayer src={videoDetails.videoSrc} startTime={videoDetails.timestamp} />
+          <VideoPlayer
+            src={videoDetails.videoSrc}
+            startTime={videoDetails.timestamp}
+            frameIndex={videoDetails.frameIndex}
+            onTimeUpdate={handleTimeUpdate}
+          />
         </Modal>
       )}
     </div>
