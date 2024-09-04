@@ -21,6 +21,27 @@ def download_blob(blob, local_path):
     print(f"Downloaded: {blob.name}")
 
 
+# def download_description_files(prefix):
+#     # List all blobs in the bucket with the given prefix
+#     blobs = bucket.list_blobs(prefix=prefix)
+
+#     # Create a list of tasks for downloading blobs
+#     tasks = []
+#     for blob in blobs:
+#         if '/description/' in blob.name:
+#             local_path = os.path.join('downloaded', blob.name)
+#             tasks.append((blob, local_path))
+
+#     # Use ThreadPoolExecutor to download files in parallel
+#     with concurrent.futures.ThreadPoolExecutor() as executor:
+#         futures = [executor.submit(download_blob, blob, local_path) for blob, local_path in tasks]
+#         for future in concurrent.futures.as_completed(futures):
+#             try:
+#                 future.result()
+#             except Exception as e:
+#                 print(f"Error downloading file: {e}")
+
+# NEW CODE OF TWANG
 def download_description_files(prefix):
     # List all blobs in the bucket with the given prefix
     blobs = bucket.list_blobs(prefix=prefix)
