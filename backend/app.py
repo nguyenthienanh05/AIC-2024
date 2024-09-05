@@ -79,7 +79,7 @@ def load_index():
 
     # Create FusionRetriever and QueryEngine
     print("Creating FusionRetriever and QueryEngine...")
-    fusion_retriever = FusionRetriever([vector_retriever, bm25_retriever], similarity_top_k=200)
+    fusion_retriever = FusionRetriever([vector_retriever, bm25_retriever], similarity_top_k=50)
     query_engine = RetrieverQueryEngine(retriever=fusion_retriever)
 
 
@@ -110,7 +110,7 @@ async def perform_query():
     try:
         start_time = time.time()
         query_bundle = QueryBundle(query)
-        final_results = await fusion_retriever._aretrieve(query_bundle)
+        final_results = fusion_retriever._retrieve(query_bundle)
         fused_results = ""
 
         print("response")
