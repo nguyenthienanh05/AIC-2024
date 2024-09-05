@@ -7,9 +7,9 @@ llama-index-retrievers-bm25
 google-cloud-storage
 typing
 gunicorn
-llama-index-vector-stores-chroma
+llama-index-vector-stores-milvus
+pymilvus
 nest-asyncio
-llama-index-vector-stores-elasticsearch
 elasticsearch
 asgiref
 hypercorn

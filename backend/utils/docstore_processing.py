@@ -25,11 +25,17 @@ def read_files_from_directory(directory_path):
     return documents
 
 
+# Read documents
 print("Reading documents...")
 documents = []
-for i in range(1, 2):
-    documents += read_files_from_directory(
-        f'/Users/albuscorleone/Documents/Schoolwork/Major/AI/URA/BKInnovation/AIC-2024/backend/downloaded/L01_V0{i:02}/description')
+for i in range(1, 4):
+    for j in range(1, 50):
+        directory_path = (f'/Users/albuscorleone/Documents/Schoolwork/Major/AI/URA/BKInnovation/AIC-2024/backend'
+                          f'/downloaded/L{i:02}_V0{j:02}/description')
+        # Check if the directory exists
+        if not os.path.exists(directory_path):
+            continue  # Skip if the directory does not exist
+        documents += read_files_from_directory(directory_path)
 #
 # base_directory = '/Users/albuscorleone/Documents/Schoolwork/Major/AI/URA/BKInnovation/AIC-2024/backend/downloaded/'  # Replace with your base directory path
 #

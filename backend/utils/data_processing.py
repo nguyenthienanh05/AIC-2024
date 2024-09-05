@@ -42,27 +42,6 @@ vector_store = ElasticsearchStore(
     metadata_field="metadata",
 )
 
-# Create the new index with desired settings
-# es_client.indices.create(index="aic_index", body={
-#     "settings": {
-#         "index": {
-#             "max_result_window": 100000
-#         }
-#     },
-#     "mappings": {
-#         "properties": {
-#             "content": {"type": "text"},
-#             "metadata": {"type": "object"},
-#             "vector": {
-#                 "type": "dense_vector",
-#                 "dims": 768,  # Adjust this to match your embedding dimensions
-#                 "index": True,
-#                 "similarity": "cosine"
-#             }
-#         }
-#     }
-# })
-
 es_client.indices.put_settings(index="aic_index",
                                settings={
                                    "index": {

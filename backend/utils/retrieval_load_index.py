@@ -56,7 +56,6 @@ class FusionRetriever(BaseRetriever):
         # Measure time for retriever results
         start_time = time.time()
         for i, retriever in enumerate(self._retrievers):
-            print(retriever, i)
             print(f"\nRetriever {i + 1} results:")
             results = retriever.retrieve(query_bundle)
             for node in results:
@@ -65,7 +64,9 @@ class FusionRetriever(BaseRetriever):
         
         end_time = time.time()
         print(f"Total retrieval execution time: {end_time - start_time:.4f} seconds")
+
         final_results = fuse_results(results_list, similarity_top_k=self._similarity_top_k)
+        return final_results
     
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # Implement your asynchronous retrieval logic here
