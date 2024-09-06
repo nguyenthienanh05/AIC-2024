@@ -36,7 +36,7 @@ def fuse_results(results_list, similarity_top_k: int = 3):
 
     print("\nFused and reranked results:")
     for node in reranked_nodes[:similarity_top_k]:
-        print(f"Node ID: {node.node.id_}, Source: {node.node.metadata['source']}, Fused Score: {node.score}")
+        print(f"Node Source: {node.node.metadata['source']}, Fused Score: {node.score}")
 
     return reranked_nodes[:similarity_top_k]
 
@@ -59,7 +59,7 @@ class FusionRetriever(BaseRetriever):
             print(f"\nRetriever {i + 1} results:")
             results = retriever.retrieve(query_bundle)
             for node in results:
-                print(f"Node ID: {node.node.id_}, Score: {node.score}")
+                print(f"Node Source: {node.node.metadata['source']}, Score: {node.score}")
             results_list.append(results)
         
         end_time = time.time()
@@ -77,7 +77,7 @@ class FusionRetriever(BaseRetriever):
             print(f"\nRetriever {i + 1} results:")
             results = retriever.retrieve(query_bundle)
             for node in results:
-                print(f"Node ID: {node.node.id_}, Score: {node.score}")
+                print(f"Node Source: {node.node.metadata['source']}, Score: {node.score}")
             results_list.append(results)
 
         end_time = time.time()

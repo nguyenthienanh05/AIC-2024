@@ -38,7 +38,6 @@ CORS(app, resources={r"/query": {
 # Set your Google API key
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 print(GOOGLE_API_KEY)
-os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
 # Initialize Gemini LLM and Embedding models
 llm = Gemini(model="models/gemini-1.5-flash", api_key=GOOGLE_API_KEY)
@@ -65,7 +64,7 @@ def load_index():
     vector_store = MilvusVectorStore(uri="https://in01-c261a7b4f576593.gcp-us-west1.vectordb.zillizcloud.com:443",
                                      token="34c0c3d4afac6c976aba6ae69dfa1e40ec7df857a13885b7bbfe9c18a74d855ccea5f8297448975fe2cde66d4fa25ffcb580e7fe",
                                      overwrite=False,
-                                     collection_name="aic_2024_beta3")
+                                     collection_name="aic_2024_official")
 
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     loaded_index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
@@ -116,13 +115,14 @@ async def perform_query():
         print("response")
 
         for final_result in final_results:
-            fused_results += f"Node ID: {final_result.id_}, Source: {final_result.node.metadata.get('source')}, Fused Score: {final_result.score}\n"
+            fused_results += f"Node Source: {final_result.node.metadata.get('source')}, Fused Score: {final_result.score}\n"
 
         print(fused_results)
         end_time = time.time()
         print(f"Time taken to execute query: {end_time - start_time:.2f} seconds")
 
-        pattern = r'Node ID: \S+, Source: response_(L\d+_V\d+)_frame_(\d{4})_(\d{8})_(\d+)_(\d{4})\.png\.txt, Fused Score: (\d+\.\d+)'
+        # pattern = r'Node ID: \S+, Source: response_(L\d+_V\d+)_frame_(\d{4})_(\d{8})_(\d+)_(\d{4})\.png\.txt, Fused Score: (\d+\.\d+)'
+        pattern = r'Node Source: response_(L\d+_V\d+)_frame_(\d{4})_(\d{8})_(\d+)_(\d{4})\.png\.txt, Fused Score: (\d+\.\d+)'
         data = defaultdict(list)
 
         matches = re.findall(pattern, fused_results)
