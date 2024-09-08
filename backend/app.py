@@ -3,7 +3,7 @@ from tqdm import tqdm
 from llama_index.core.schema import TextNode, Document
 from flask import Flask, request, jsonify
 import time
-from elasticsearch import Elasticsearch
+# from elasticsearch import Elasticsearch
 from llama_index.core import StorageContext
 from llama_index.llms.gemini import Gemini
 from llama_index.embeddings.gemini import GeminiEmbedding
@@ -15,7 +15,7 @@ import os
 import traceback
 import sys
 from llama_index.vector_stores.milvus import MilvusVectorStore
-from llama_index.vector_stores.elasticsearch import ElasticsearchStore
+# from llama_index.vector_stores.elasticsearch import ElasticsearchStore
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from collections import defaultdict
 import re
@@ -122,18 +122,20 @@ async def perform_query():
         print(f"Time taken to execute query: {end_time - start_time:.2f} seconds")
 
         # pattern = r'Node ID: \S+, Source: response_(L\d+_V\d+)_frame_(\d{4})_(\d{8})_(\d+)_(\d{4})\.png\.txt, Fused Score: (\d+\.\d+)'
-        pattern = r'Node Source: response_(L\d+_V\d+)_frame_(\d{4})_(\d{8})_(\d+)_(\d{4})\.png\.txt, Fused Score: (\d+\.\d+)'
+        pattern = r'(?:Node ID: \S+, Source: )?(?:([\w\d]+/description/))?response_(L\d+_V\d+)_frame_(\d{4})_(\d{8})_(\d+)_(\d{4})\.png\.txt, Fused Score: (\d+\.\d+)'
         data = defaultdict(list)
 
+        # Extract matches using the regex pattern
         matches = re.findall(pattern, fused_results)
 
+        # Process matches and populate the data dictionary
         for match in matches:
-            video_id = match[0]
-            frame_id = f"{video_id}_frame_{match[1]}_{match[2]}"
-            frame_index = match[3]
-            fps = int(match[4]) / 100  # Convert fps to float
-            fused_score = float(match[5])
-            path = f"{video_id}/scene/{frame_id}_{frame_index}_{match[4]}.png"
+            video_id = match[1]
+            frame_id = f"{video_id}_frame_{match[2]}_{match[3]}"
+            frame_index = match[4]
+            fps = int(match[5]) / 100  # Convert fps to float
+            fused_score = float(match[6])
+            path = f"{video_id}/scene/{frame_id}_{frame_index}_{match[5]}.png"
 
             data[video_id].append({
                 "path": path,
