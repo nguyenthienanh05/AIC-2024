@@ -18,7 +18,8 @@ const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, in
   };
 
   const { frameNumber, timestamp, frameIndex, fps } = extractNumbers(framePath) || {};
-  const videoSrc = `${BASE_URL}${videoName}/${videoName}.mp4`;
+  // const videoSrc = `${BASE_URL}${videoName}/${videoName}.mp4`;
+  const videoSrc = `videos/${videoName}.mp4`;
 
   const frameMinute = Math.floor(timestamp / 60);
   const frameSecond = Math.floor(timestamp % 60);
