@@ -25,18 +25,25 @@ import asyncio
 from asgiref.wsgi import WsgiToAsgi
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
+from groq import Groq
 
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/query": {
+# CORS(app, resources={r"/query": {
+#     "origins": ["http://localhost:5173", "http://localhost:1", "https://ai-challenge-2024-431017.web.app"],
+#     "methods": ["POST"],
+#     "allow_headers": ["Content-Type"]
+# }})
+
+CORS(app, resources={r"/*": {
     "origins": ["http://localhost:5173", "http://localhost:1", "https://ai-challenge-2024-431017.web.app"],
-    "methods": ["POST"],
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "allow_headers": ["Content-Type"]
 }})
 
 # Set your Google API key
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_API_KEY = "AIzaSyD2h9AV-gzd5Nq162v28NaAIPIBFv61ldo"
 print(GOOGLE_API_KEY)
 
 # Initialize Gemini LLM and Embedding models
@@ -61,8 +68,8 @@ def load_index():
     docstore = SimpleDocumentStore.from_persist_dir("./utils/saved_index")
 
     print("Loading vector store...")
-    vector_store = MilvusVectorStore(uri="https://in01-c261a7b4f576593.gcp-us-west1.vectordb.zillizcloud.com:443",
-                                     token="34c0c3d4afac6c976aba6ae69dfa1e40ec7df857a13885b7bbfe9c18a74d855ccea5f8297448975fe2cde66d4fa25ffcb580e7fe",
+    vector_store = MilvusVectorStore(uri="https://in01-6bc09d4d9f744a7.gcp-asia-southeast1.vectordb.zillizcloud.com:443",
+                                     token="dec231063ca5597f1d08c044014f913f90d33081321531cc927284191475e57ed630784faa08ce8afacbdcac5fd76959a4b0574b",
                                      overwrite=False,
                                      collection_name="aic_2024_official")
 
@@ -78,7 +85,7 @@ def load_index():
 
     # Create FusionRetriever and QueryEngine
     print("Creating FusionRetriever and QueryEngine...")
-    fusion_retriever = FusionRetriever([vector_retriever, bm25_retriever], similarity_top_k=50)
+    fusion_retriever = FusionRetriever([vector_retriever, bm25_retriever], similarity_top_k=200)
     query_engine = RetrieverQueryEngine(retriever=fusion_retriever)
 
 
@@ -156,6 +163,50 @@ async def perform_query():
         app.logger.error(f"An error occurred while processing the query: {str(e)}")
         app.logger.error(traceback.format_exc())
         return jsonify({"error": "An internal server error occurred. Please check the logs for more details."}), 500
+
+
+@app.route('/translate', methods=['POST'])
+async def translate_text():
+    data = request.get_json()
+    text = data.get('text')
+
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+
+    try:
+        client = Groq()
+        completion = client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=[
+                {
+                    "role": "user",
+                    "content": ""
+                },
+                {
+                    "role": "assistant",
+                    "content": "Translate all vietnamese to english\nExpected Output Format:\n<Translated Content>\nYou only give the translated text, no other text or comment."
+                },
+                {
+                    "role": "user",
+                    "content": text
+                }
+            ],
+            temperature=1,
+            max_tokens=1024,
+            top_p=1,
+            stream=False,
+            stop=None,
+        )
+
+        translated_text = completion.choices[0].message.content.strip()
+        # Remove the <Translated Content> tags if present
+        translated_text = translated_text.replace("<Translated Content>", "").replace("</Translated Content>", "").strip()
+
+        return jsonify({"translatedText": translated_text})
+    except Exception as e:
+        app.logger.error(f"An error occurred while translating: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({"error": "An error occurred while translating. Please try again."}), 500
 
 
 if __name__ == '__main__':

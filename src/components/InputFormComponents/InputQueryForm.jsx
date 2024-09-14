@@ -21,6 +21,8 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
   const [isCurrentSceneQueryValid, setIsCurrentSceneQueryValid] =
     useState(false);
   const [isQuestionValid, setIsQuestionValid] = useState(false);
+  const [csvContent, setCsvContent] = useState("");
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleCurrentSceneQueryChange = (e) => {
     setCurrentSceneQuery(e.target.value);
@@ -45,9 +47,67 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
     }
   };
 
+  const handleTranslate = async (e) => {
+    e.preventDefault();
+    if (isCurrentSceneQueryValid) {
+      try {
+        setIsLoading(true);
+        const response = await fetch("http://localhost:8080/translate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: currentSceneQuery,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setCurrentSceneQuery(data.translatedText);
+      } catch (error) {
+        console.error("Error translating text:", error);
+        alert("An error occurred while translating. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      alert("Please input the query for the current scene to translate.");
+    }
+  };
+
+  const getResultsList = (data) => {
+    const list = [];
+    Object.entries(data).forEach(([videoName, frames]) => {
+      if (videoName !== "isQueryAndQnA") {
+        frames.forEach(frame => {
+          const frameIndex = parseInt(frame.frameIndex, 10);
+          list.push(`${videoName}\t${frameIndex}`);
+        });
+      }
+    });
+    return list.join('\n');
+  };
+
+  const handleGetCSV = (e) => {
+    e.preventDefault();
+    if (csvContent) {
+      navigator.clipboard.writeText(csvContent).then(() => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 1000); // Reset sau 1 giây
+      }).catch(err => {
+        console.error('Failed to copy text: ', err);
+      });
+    }
+  };
+
   const handleQuery = async (e) => {
     e.preventDefault();
     if (isCurrentSceneQueryValid) {
+      console.clear();
       console.log("Query submitted:", {
         currentSceneQuery,
         nextScenesQuery,
@@ -76,6 +136,10 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
         sortedData.isQueryAndQnA = false;
         console.log("Query response:", sortedData);
         console.log(sortedData.isQueryAndQnA);
+
+        const resultsList = getResultsList(sortedData);
+        console.log(resultsList);
+        setCsvContent(resultsList);
         onQueryResponse(sortedData);
       } catch (error) {
         console.error("Error submitting query:", error);
@@ -119,6 +183,7 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
         const data = await response.json();
         const sortedData = sortDataByFirstFrameScore(data);
         sortedData.isQueryAndQnA = true;
+        console.clear();
         console.log("Query response:", sortedData);
         console.log(sortedData.isQueryAndQnA);
         onQueryResponse(sortedData);
@@ -171,6 +236,12 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
             />
             <div className="flex justify-center space-x-4 mt-2">
               <QueryButton
+                text="Translate"
+                bgColor="bg-[#90CAF9]"
+                onClick={handleTranslate}
+                disabled={!isCurrentSceneQueryValid}
+              />
+              <QueryButton
                 text="Query"
                 bgColor="bg-[#8CFF84]"
                 onClick={handleQuery}
@@ -181,6 +252,13 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
                 bgColor="bg-[#FF7375]"
                 onClick={handleQueryAndQnA}
                 disabled={!isCurrentSceneQueryValid || !isQuestionValid}
+              />
+              <QueryButton
+                text="Get CSV"
+                bgColor={isCopied ? "bg-[#4CAF50]" : "bg-[#90EE90]"} // Màu nhạt hơn khi đã copy
+                onClick={handleGetCSV}
+                disabled={!csvContent}
+                type="button"
               />
             </div>
           </div>

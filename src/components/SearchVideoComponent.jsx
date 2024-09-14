@@ -15,7 +15,7 @@ const SearchVideoButton = () => {
     if (match) {
       const [, videoName, frameNumber, minutes, seconds, fps] = match;
       const timestamp = parseInt(minutes) * 60 + parseInt(seconds);
-      const videoSrc = `https://storage.googleapis.com/demo100vid/${videoName}/${videoName}.mp4`;
+      const videoSrc = `videos/${videoName}.mp4`;
 
       setVideoDetails({
         videoName,
@@ -26,6 +26,7 @@ const SearchVideoButton = () => {
         frameIndex: frameNumber,
         fps: parseInt(fps)
       });
+
       setIsModalOpen(true);
     } else {
       alert('Invalid input format. Please use the format: Video L01_V002 Frame: 0279 Time: 15:57 FPS: 30');
