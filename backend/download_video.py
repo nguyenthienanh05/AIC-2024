@@ -48,7 +48,7 @@ def download_video_files():
             tasks.append((blob, local_path))
 
     # Số lượng worker (executors) để tải song song
-    max_workers = 2
+    max_workers = 240
 
     # Sử dụng ThreadPoolExecutor để tải file song song
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:

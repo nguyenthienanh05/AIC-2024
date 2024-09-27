@@ -5,7 +5,8 @@ import VideoPlayer from "./VideoPlayer";
 
 const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, index, isQueryAndQnA }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const BASE_URL = "https://storage.googleapis.com/aic_videos_2024/";
+  const BASE_URL_FRAME = "https://storage.googleapis.com/aic_videos_data/";
+  const BASE_URL_VIDEO = "https://storage.googleapis.com/aic_videos_2024/";
 
   const extractNumbers = (path) => {
     const match = path.match(/frame_(\d{4})_(\d+)_(\d+)_(\d{4})\.png/);
@@ -18,8 +19,8 @@ const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, in
   };
 
   const { frameNumber, timestamp, frameIndex, fps } = extractNumbers(framePath) || {};
-  // const videoSrc = `${BASE_URL}${videoName}/${videoName}.mp4`;
-  const videoSrc = `videos/${videoName}.mp4`;
+  const videoSrc = `${BASE_URL_VIDEO}${videoName}/${videoName}.mp4`;
+  // const videoSrc = `videos/${videoName}.mp4`;
 
   const frameMinute = Math.floor(timestamp / 60);
   const frameSecond = Math.floor(timestamp % 60);
@@ -30,7 +31,7 @@ const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, in
   return (
     <div className="w-24 flex flex-col items-center">
       <img
-        src={`${BASE_URL}${framePath}`}
+        src={`${BASE_URL_FRAME}${framePath}`}
         alt={`Frame ${frameNumber}`}
         className="w-full h-auto object-cover rounded border-[1px] border-black cursor-pointer"
         onClick={() => setIsModalOpen(true)}

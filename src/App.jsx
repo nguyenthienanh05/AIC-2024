@@ -1,7 +1,8 @@
 import React from "react";
 import InputQueryForm from "./components/InputFormComponents/InputQueryForm";
 import VideoDisplay from "./components/VideoDisplayComponents/VideoDisplay";
-import SearchVideoButton from "./components/SearchVideoComponent";
+import SearchVideoButton from "./components/SearchVideoComponent/SearchVideoComponent";
+import SearchVideoFrame from "./components/SearchVideoComponent/SearchVideoFrame";
 import { useState } from "react";
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
         setIsLoading={setIsLoading}
       />
       <SearchVideoButton />
+      <SearchVideoFrame />
       {isLoading ? (
         <div className="flex flex-col justify-center items-center h-64">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>

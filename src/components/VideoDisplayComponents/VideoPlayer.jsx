@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 
 
-const VideoPlayer = ({ src, startTime, frameIndex, onTimeUpdate  }) => {
+const VideoPlayer = ({ src, startTime, onTimeUpdate  }) => {
   const videoRef = useRef(null);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
 

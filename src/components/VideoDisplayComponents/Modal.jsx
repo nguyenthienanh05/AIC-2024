@@ -46,7 +46,7 @@ const Modal = ({
 
   const handleTimeUpdate = (newTime) => {
     setCurrentVideoTime(newTime);
-    setTempFrameIndex(Math.floor(newTime * fps).toString().padStart(4, '0'));
+    setTempFrameIndex(Math.floor(newTime * fps));
   };
 
   const handleNext = () => {
@@ -97,14 +97,14 @@ const Modal = ({
   const currentFrame = allFrames[currentModalIndex];
   const currentFrameNumber =
     currentFrame?.path?.match(/frame_(\d{4})_/)[1] || frameNumber;
-  const currentTimestamp =
-    timestamp + 0.1 ||
-    parseInt(currentFrame?.path?.match(/_(\d+)\.png/)[1]) / 1000 + 0.1;
-  const currentFrameMinute = Math.floor(currentTimestamp / 60);
-  const currentFrameSecond = Math.floor(currentTimestamp % 60);
-  const currentFrameTime = `${currentFrameMinute}:${currentFrameSecond
-    .toString()
-    .padStart(2, "0")}`;
+  // const currentTimestamp =
+  //   timestamp + 0.1 ||
+  //   parseInt(currentFrame?.path?.match(/_(\d+)\.png/)[1]) / 1000 + 0.1;
+  // const currentFrameMinute = Math.floor(currentTimestamp / 60);
+  // const currentFrameSecond = Math.floor(currentTimestamp % 60);
+  // const currentFrameTime = `${currentFrameMinute}:${currentFrameSecond
+  //   .toString()
+  //   .padStart(2, "0")}`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">

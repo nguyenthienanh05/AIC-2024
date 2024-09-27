@@ -5,7 +5,7 @@ import concurrent.futures
 
 # Thiết lập xác thực Google Cloud
 credentials = service_account.Credentials.from_service_account_file(
-    '/Users/albuscorleone/Downloads/ai-challenge-2024-431017-a875f74b540b.json',
+    'ai-challenge-2024-431017-a875f74b540b.json',
     scopes=["https://www.googleapis.com/auth/cloud-platform"]
 )
 # Set your bucket name
