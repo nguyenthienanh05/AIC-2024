@@ -13,6 +13,29 @@ const sortDataByFirstFrameScore = (data) => {
   );
 };
 
+const EndpointMenu = ({ selectedEndpoint, onEndpointChange }) => {
+  const endpoints = [
+    "ownData-Fusion",
+    "ownData-CLIP",
+    "orgData-Fusion",
+    "orgData-CLIP"
+  ];
+
+  return (
+    <select
+      value={selectedEndpoint}
+      onChange={(e) => onEndpointChange(e.target.value)}
+      className="text-sm p-1 border rounded"
+    >
+      {endpoints.map((endpoint) => (
+        <option key={endpoint} value={endpoint}>
+          {endpoint}
+        </option>
+      ))}
+    </select>
+  );
+};
+
 const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
   const [currentSceneQuery, setCurrentSceneQuery] = useState("");
   const [nextScenesQuery, setNextScenesQuery] = useState("");
@@ -23,6 +46,7 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
   const [isQuestionValid, setIsQuestionValid] = useState(false);
   const [csvContent, setCsvContent] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const [selectedEndpoint, setSelectedEndpoint] = useState("ownData-Fusion");
 
   const handleCurrentSceneQueryChange = (e) => {
     setCurrentSceneQuery(e.target.value);
@@ -112,10 +136,11 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
         currentSceneQuery,
         nextScenesQuery,
         question,
+        selectedEndpoint,
       });
       try {
         setIsLoading(true);
-        const response = await fetch("http://localhost:8080/query", {
+        const response = await fetch(`http://localhost:8080/${selectedEndpoint}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -234,19 +259,21 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
               onChange={handleQuestionChange}
               onKeyDown={handleKeyPress}
             />
-            <div className="flex justify-center space-x-4 mt-2">
+            <div className="flex justify-center items-center space-x-4 mt-2">
               <QueryButton
                 text="Translate"
                 bgColor="bg-[#90CAF9]"
                 onClick={handleTranslate}
                 disabled={!isCurrentSceneQueryValid}
               />
-              <QueryButton
-                text="Query"
-                bgColor="bg-[#8CFF84]"
-                onClick={handleQuery}
-                disabled={!isCurrentSceneQueryValid}
-              />
+              <div className="flex items-center space-x-2">
+                <QueryButton
+                  text="Query"
+                  bgColor="bg-[#8CFF84]"
+                  onClick={handleQuery}
+                  disabled={!isCurrentSceneQueryValid}
+                />
+              </div>
               <QueryButton
                 text="Query and QnA"
                 bgColor="bg-[#FF7375]"
@@ -255,10 +282,14 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
               />
               <QueryButton
                 text="Get CSV"
-                bgColor={isCopied ? "bg-[#4CAF50]" : "bg-[#90EE90]"} // Màu nhạt hơn khi đã copy
+                bgColor={isCopied ? "bg-[#4CAF50]" : "bg-[#90EE90]"}
                 onClick={handleGetCSV}
                 disabled={!csvContent}
                 type="button"
+              />
+              <EndpointMenu
+                  selectedEndpoint={selectedEndpoint}
+                onEndpointChange={setSelectedEndpoint}
               />
             </div>
           </div>
@@ -277,6 +308,11 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
 InputQueryForm.propTypes = {
   onQueryResponse: PropTypes.func.isRequired,
   setIsLoading: PropTypes.func.isRequired,
+};
+
+EndpointMenu.propTypes = {
+  selectedEndpoint: PropTypes.string.isRequired,
+  onEndpointChange: PropTypes.func.isRequired,
 };
 
 export default InputQueryForm;
