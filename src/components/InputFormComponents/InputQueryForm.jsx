@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import InputBar from "./InputBar";
 import QueryButton from "./QueryButton";
+import EndpointMenu from "./EndpointMenu";
+import InputWeight from "./InputWeight";
 import PropTypes from "prop-types";
 
 const sortDataByFirstFrameScore = (data) => {
@@ -23,6 +25,9 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
   const [isQuestionValid, setIsQuestionValid] = useState(false);
   const [csvContent, setCsvContent] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const [selectedEndpoint, setSelectedEndpoint] = useState("ownData-Fusion");
+  const [vectorWeight, setVectorWeight] = useState(0.5);
+  const [bm25Weight, setBm25Weight] = useState(0.5);
 
   const handleCurrentSceneQueryChange = (e) => {
     setCurrentSceneQuery(e.target.value);
@@ -112,10 +117,11 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
         currentSceneQuery,
         nextScenesQuery,
         question,
+        selectedEndpoint,
       });
       try {
         setIsLoading(true);
-        const response = await fetch("http://localhost:8080/query", {
+        const response = await fetch(`http://localhost:8080/${selectedEndpoint}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -205,6 +211,28 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
     setIsFormVisible(!isFormVisible);
   };
 
+  const handleVectorWeightChange = (value) => {
+    setVectorWeight(value);
+    fetch("http://localhost:8080/set_vector_weight", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ weight: value }),
+    }).catch(error => console.error("Error setting vector weight:", error));
+  };
+  
+  const handleBm25WeightChange = (value) => {
+    setBm25Weight(value);
+    fetch("http://localhost:8080/set_bm25_weight", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ weight: value }),
+    }).catch(error => console.error("Error setting BM25 weight:", error));
+  };
+
   return (
     <div className="top-0 z-50">
       {isFormVisible && (
@@ -234,19 +262,21 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
               onChange={handleQuestionChange}
               onKeyDown={handleKeyPress}
             />
-            <div className="flex justify-center space-x-4 mt-2">
+            <div className="flex justify-center items-center space-x-4 mt-2">
               <QueryButton
                 text="Translate"
                 bgColor="bg-[#90CAF9]"
                 onClick={handleTranslate}
                 disabled={!isCurrentSceneQueryValid}
               />
-              <QueryButton
-                text="Query"
-                bgColor="bg-[#8CFF84]"
-                onClick={handleQuery}
-                disabled={!isCurrentSceneQueryValid}
-              />
+              <div className="flex items-center space-x-2">
+                <QueryButton
+                  text="Query"
+                  bgColor="bg-[#8CFF84]"
+                  onClick={handleQuery}
+                  disabled={!isCurrentSceneQueryValid}
+                />
+              </div>
               <QueryButton
                 text="Query and QnA"
                 bgColor="bg-[#FF7375]"
@@ -255,10 +285,32 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
               />
               <QueryButton
                 text="Get CSV"
-                bgColor={isCopied ? "bg-[#4CAF50]" : "bg-[#90EE90]"} // Màu nhạt hơn khi đã copy
+                bgColor={isCopied ? "bg-[#4CAF50]" : "bg-[#90EE90]"}
                 onClick={handleGetCSV}
                 disabled={!csvContent}
                 type="button"
+              />
+              <EndpointMenu
+                selectedEndpoint={selectedEndpoint}
+                onEndpointChange={setSelectedEndpoint}
+              />
+            </div>
+            <div className="flex space-x-4 mt-2">
+              <InputWeight
+                label="Vector Weight"
+                initialValue={vectorWeight}
+                onSubmit={handleVectorWeightChange}
+                min={0}
+                max={1}
+                step={0.1}
+              />
+              <InputWeight
+                label="BM25 Weight"
+                initialValue={bm25Weight}
+                onSubmit={handleBm25WeightChange}
+                min={0}
+                max={1}
+                step={0.1}
               />
             </div>
           </div>
@@ -278,5 +330,6 @@ InputQueryForm.propTypes = {
   onQueryResponse: PropTypes.func.isRequired,
   setIsLoading: PropTypes.func.isRequired,
 };
+
 
 export default InputQueryForm;
