@@ -1,4 +1,4 @@
-from utils.retrieval_load_index import FusionRetriever
+from utils.retrieval_load_index import FusionRetriever, set_vector_weight, set_bm25_weight
 from tqdm import tqdm
 from llama_index.core.schema import TextNode, Document
 from flask import Flask, request, jsonify
@@ -30,7 +30,7 @@ from groq import Groq
 load_dotenv()
 
 app = Flask(__name__)
-# CORS(app, resources={r"/query": {
+# CORS(app, resources={r"/ownData-Fusion": {
 #     "origins": ["http://localhost:5173", "http://localhost:1", "https://ai-challenge-2024-431017.web.app"],
 #     "methods": ["POST"],
 #     "allow_headers": ["Content-Type"]
@@ -58,8 +58,6 @@ Settings.embed_model = embed_model
 loaded_index = None
 query_engine = None
 fusion_retriever = None
-
-
 def load_index():
     global loaded_index, query_engine, fusion_retriever
     print("Loading the saved index from Milvus...")
@@ -87,7 +85,6 @@ def load_index():
     print("Creating FusionRetriever and QueryEngine...")
     fusion_retriever = FusionRetriever([vector_retriever, bm25_retriever], similarity_top_k=200)
     query_engine = RetrieverQueryEngine(retriever=fusion_retriever)
-
 
 @app.route("/")
 def hello_world():
@@ -176,7 +173,7 @@ async def translate_text():
     try:
         client = Groq()
         completion = client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="llama-3.1-70b-versatile",
             messages=[
                 {
                     "role": "user",
@@ -191,8 +188,8 @@ async def translate_text():
                     "content": text
                 }
             ],
-            temperature=1,
-            max_tokens=1024,
+            temperature=0,
+            max_tokens=2048,
             top_p=1,
             stream=False,
             stop=None,
@@ -208,6 +205,32 @@ async def translate_text():
         app.logger.error(traceback.format_exc())
         return jsonify({"error": "An error occurred while translating. Please try again."}), 500
 
+
+@app.route('/set_vector_weight', methods=['POST'])
+def set_vector_weight_endpoint():
+    data = request.get_json()
+    weight = data.get('weight')
+    if weight is None:
+        return jsonify({"error": "No weight provided"}), 400
+    try:
+        set_vector_weight(float(weight))
+        return jsonify({"message": "Vector weight updated successfully"}), 200
+    except Exception as e:
+        app.logger.error(f"An error occurred while setting vector weight: {str(e)}")
+        return jsonify({"error": "An error occurred while setting vector weight"}), 500
+
+@app.route('/set_bm25_weight', methods=['POST'])
+def set_bm25_weight_endpoint():
+    data = request.get_json()
+    weight = data.get('weight')
+    if weight is None:
+        return jsonify({"error": "No weight provided"}), 400
+    try:
+        set_bm25_weight(float(weight))
+        return jsonify({"message": "BM25 weight updated successfully"}), 200
+    except Exception as e:
+        app.logger.error(f"An error occurred while setting BM25 weight: {str(e)}")
+        return jsonify({"error": "An error occurred while setting BM25 weight"}), 500
 
 if __name__ == '__main__':
     try:

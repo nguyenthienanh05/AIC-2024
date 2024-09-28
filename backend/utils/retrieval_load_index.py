@@ -5,27 +5,36 @@ from llama_index.core import QueryBundle
 import time
 
 
+# Define global weights
+VECTOR_WEIGHT = 0.5
+BM25_WEIGHT = 0.5
+
+
 # Define the function to fuse results
-def fuse_results(results_list, similarity_top_k: int = 3):
+# Define the function to fuse results
+# Define the function to fuse results with full weight for vector retriever and 0 for BM25
+def fuse_results(results_list, similarity_top_k: int = 3, weights: List[float] = None):
+    print("THIS IS WEIGHT: ",VECTOR_WEIGHT)
+    print("THIS IS WEIGHT: ",BM25_WEIGHT)
+    if weights is None:
+        weights = [1.0] * len(results_list)  # Nếu không cung cấp trọng số, mặc định là 1.0 cho tất cả
     k = 60.0
     fused_scores = {}
     text_to_node = {}
 
-    # print("Input results_list:")
-    # for i, nodes_with_scores in enumerate(results_list):
-    #     print(f"Retriever {i + 1} results:")
-    #     for node_with_score in nodes_with_scores:
-    #         print(f"  Node ID: {node_with_score.node.id_}, Score: {node_with_score.score}")
-
-    for nodes_with_scores in results_list:
+    for i, nodes_with_scores in enumerate(results_list):
+        weight = weights[i]  # Lấy trọng số cho retriever hiện tại
         for rank, node_with_score in enumerate(
                 sorted(nodes_with_scores, key=lambda x: x.score or 0.0, reverse=True)
         ):
+            if weight == 0:
+                continue  # Bỏ qua nếu trọng số là 0 (BM25)
+                
             text = node_with_score.node.get_content()
             text_to_node[text] = node_with_score
             if text not in fused_scores:
                 fused_scores[text] = 0.0
-            fused_scores[text] += 1.0 / (rank + k)
+            fused_scores[text] += weight * (1.0 / (rank + k))
 
     reranked_results = dict(sorted(fused_scores.items(), key=lambda x: x[1], reverse=True))
 
@@ -65,11 +74,10 @@ class FusionRetriever(BaseRetriever):
         end_time = time.time()
         print(f"Total retrieval execution time: {end_time - start_time:.4f} seconds")
 
-        final_results = fuse_results(results_list, similarity_top_k=self._similarity_top_k)
+        final_results = fuse_results(results_list, similarity_top_k=self._similarity_top_k, weights=[VECTOR_WEIGHT, BM25_WEIGHT])
         return final_results
-    
+
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        # Implement your asynchronous retrieval logic here
         results_list = []
         start_time = time.time()
         for i, retriever in enumerate(self._retrievers):
@@ -83,20 +91,10 @@ class FusionRetriever(BaseRetriever):
         end_time = time.time()
         print(f"Total retrieval execution time: {end_time - start_time:.4f} seconds")
 
-        final_results = fuse_results(results_list, similarity_top_k=self._similarity_top_k)
-
-
-        # Display content of top-k documents
-        # print("\nTop-k Document Contents:")
-        # for i, node in enumerate(final_results):
-        #     print(f"\nDocument {i + 1}:")
-        #     print(f"Source: {node.node.metadata['source']}")
-        #     print(f"Score: {node.score}")
-        #     print("Content:")
-        #     print(node.node.get_content())
-        #     print("-" * 50)
+        final_results = fuse_results(results_list, similarity_top_k=self._similarity_top_k, weights=[VECTOR_WEIGHT, BM25_WEIGHT])
 
         return final_results
+
     # async def _scroll_retrieve(self, retriever, query_bundle):
     #     all_results = []
     #     scroll_id = None
@@ -119,3 +117,13 @@ class FusionRetriever(BaseRetriever):
     #             all_results.append(NodeWithScore(node=node, score=hit["_score"]))
     #
     #     return all_results
+
+def set_vector_weight(weight: float):
+    global VECTOR_WEIGHT
+    VECTOR_WEIGHT = weight
+    print(f"Vector weight set to: {VECTOR_WEIGHT}")
+
+def set_bm25_weight(weight: float):
+    global BM25_WEIGHT
+    BM25_WEIGHT = weight
+    print(f"BM25 weight set to: {BM25_WEIGHT}")
