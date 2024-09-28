@@ -4,9 +4,7 @@ import PropTypes from "prop-types";
 export default function EndpointMenu({ selectedEndpoint, onEndpointChange }) {
   const endpoints = [
     "ownData-Fusion",
-    "ownData-CLIP",
-    "orgData-Fusion",
-    "orgData-CLIP"
+    "orgData-Fusion"
   ];
 
   return (
