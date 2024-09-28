@@ -74,6 +74,10 @@ const Modal = ({
     setNewSceneAnswer("New scene answer placeholder");
   };
 
+  const handleClickOnBackground = () => {
+    onClose();
+  };
+
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
@@ -107,11 +111,15 @@ const Modal = ({
   //   .padStart(2, "0")}`;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+      onClick={handleClickOnBackground}
+    >
       <div
         className={`${bgColor} p-6 rounded-lg relative ${
           isQueryAndQnA ? "max-w-5xl" : "max-w-3xl"
         } w-full`}
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
