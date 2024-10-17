@@ -1,11 +1,16 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-const QueryButton = ({ text, bgColor, onClick }) => {
+const QueryButton = ({ text, onClick, disabled, className }) => {
   return (
     <button
       onClick={onClick}
-      className={`px-6 py-3 cursor-pointer text-lg font-semibold ${bgColor} rounded-[30px] border-[3px] border-black focus:outline-none focus:ring-2 focus:ring-blue-500 hover:opacity-90 transition-opacity`}
+      disabled={disabled}
+      className={`px-6 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+        disabled
+          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          : `${className} hover:shadow-md active:transform active:scale-95`
+      }`}
     >
       {text}
     </button>
@@ -14,8 +19,9 @@ const QueryButton = ({ text, bgColor, onClick }) => {
 
 QueryButton.propTypes = {
   text: PropTypes.string,
-  bgColor: PropTypes.string,
   onClick: PropTypes.func,
+  disabled: PropTypes.bool,
+  className: PropTypes.string,
 };
 
 export default QueryButton;
