@@ -52,7 +52,7 @@ const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, in
           fps={fps}
           isQueryAndQnA={isQueryAndQnA}
         >
-          <VideoPlayer src={videoSrc} startTime={timestamp} frameIndex={frameIndex} onTimeUpdate={() => {}} />
+          <VideoPlayer src={videoSrc} startTime={timestamp} frameIndex={frameIndex} onTimeUpdate={() => {}} ref={null} />
         </Modal>
       )}
     </div>

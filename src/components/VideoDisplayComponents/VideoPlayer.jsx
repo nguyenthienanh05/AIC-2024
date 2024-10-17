@@ -1,14 +1,15 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, forwardRef } from "react";
 import PropTypes from "prop-types";
 
 
-const VideoPlayer = ({ src, startTime, onTimeUpdate  }) => {
-  const videoRef = useRef(null);
+// eslint-disable-next-line no-unused-vars
+const VideoPlayer = forwardRef(({ src, startTime, onTimeUpdate }, ref) => {
+  const innerRef = useRef(null);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = startTime;
+    if (innerRef.current) {
+      innerRef.current.currentTime = startTime;
     }
   }, [startTime]);
 
@@ -36,8 +37,8 @@ const VideoPlayer = ({ src, startTime, onTimeUpdate  }) => {
   }, []);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = playbackSpeed;
+    if (innerRef.current) {
+      innerRef.current.playbackRate = playbackSpeed;
     }
   }, [playbackSpeed]);
 
@@ -49,10 +50,10 @@ const VideoPlayer = ({ src, startTime, onTimeUpdate  }) => {
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
+    if (innerRef.current) {
       // Chỉ gọi onTimeUpdate nếu nó là một hàm
       if (typeof onTimeUpdate === 'function') {
-        onTimeUpdate(videoRef.current.currentTime);
+        onTimeUpdate(innerRef.current.currentTime);
       }
     }
   };
@@ -60,10 +61,10 @@ const VideoPlayer = ({ src, startTime, onTimeUpdate  }) => {
   return (
     <div className="video-player-container">
       <video
-        ref={videoRef}
+        ref={innerRef}
         controls
-        width="640"
-        height="360"
+        width="100%"
+        height="100%"
         className="rounded-lg shadow-lg"
         onTimeUpdate={handleTimeUpdate}
       >
@@ -80,7 +81,7 @@ const VideoPlayer = ({ src, startTime, onTimeUpdate  }) => {
       </div>
     </div>
   );
-};
+});
 
 VideoPlayer.propTypes = {
   src: PropTypes.string.isRequired,
@@ -88,5 +89,7 @@ VideoPlayer.propTypes = {
   frameIndex: PropTypes.string,
   onTimeUpdate: PropTypes.func.isRequired,
 };
+
+VideoPlayer.displayName = 'VideoPlayer';
 
 export default VideoPlayer;
