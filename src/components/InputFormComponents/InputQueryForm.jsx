@@ -29,15 +29,15 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
   }, []);
 
   const handleKeyPress = useCallback((e) => {
-    if (e.key === "Enter" && isCurrentSceneQueryValid) {
+    if (e.key === "Enter" && currentSceneQuery.trim() !== "") {
       e.preventDefault();
       handleQuery(e);
     }
-  }, [isCurrentSceneQueryValid]);
+  }, [currentSceneQuery]);
 
   const handleTranslate = useCallback(async (e) => {
     e.preventDefault();
-    if (!isCurrentSceneQueryValid) {
+    if (currentSceneQuery.trim() === "") {
       alert("Please input the query for the current scene to translate.");
       return;
     }
@@ -62,14 +62,16 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentSceneQuery, isCurrentSceneQueryValid, setIsLoading]);
+  }, [currentSceneQuery, setIsLoading]);
 
   const handleQuery = useCallback(async (e) => {
     e.preventDefault();
-    if (!isCurrentSceneQueryValid) {
+    if (currentSceneQuery.trim() === "") {
       alert("Please input the query for the current scene.");
       return;
     }
+
+    console.log("Query being sent:", currentSceneQuery);
 
     try {
       setIsLoading(true);
@@ -96,7 +98,7 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentSceneQuery, isCurrentSceneQueryValid, selectedEndpoint, setIsLoading, onQueryResponse]);
+  }, [currentSceneQuery, selectedEndpoint, setIsLoading, onQueryResponse]);
 
   const toggleFormVisibility = useCallback(() => {
     setIsFormVisible((prev) => !prev);
