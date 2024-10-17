@@ -71,7 +71,7 @@ def load_index_ownData_fusion():
     docstore = SimpleDocumentStore.from_persist_dir("./utils/saved_index_ownData_fusion")
 
     print("Loading vector store for ownData_fusion...")
-    vector_store = MilvusVectorStore(uri="https://in01-6bc09d4d9f744a7.gcp-asia-southeast1.vectordb.zillizcloud.com:443",
+    vector_store = MilvusVectorStore(uri="https://in01-35c806597799c84.gcp-asia-southeast1.vectordb.zillizcloud.com/",
                                      token="dec231063ca5597f1d08c044014f913f90d33081321531cc927284191475e57ed630784faa08ce8afacbdcac5fd76959a4b0574b",
                                      overwrite=False,
                                      collection_name="aic_2024_official_4")
@@ -120,16 +120,10 @@ def load_index_orgData_fusion():
 @app.route("/")
 def hello_world():
     """Example Hello World route."""
-    try:
-        load_index()  # Load the index once when the application starts
-    except Exception as e:
-        app.logger.error(f"Failed to load index: {str(e)}")
-        app.logger.error(traceback.format_exc())
-    name = os.environ.get("NAME", "Worldsdklcvgj")
-    return f"Hellosdfasd {name}!!!!!!!!!!!!"
+    return f"Hello World!!!!!!!!!!!!"
 
 @app.route('/ownData-Fusion', methods=['POST'])
-async def perform_query_ownData_Fusion():
+async def perform_query_ownDatsa_Fusion():
     data = request.get_json()
     query = data.get('query')
     print(query)
