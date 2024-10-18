@@ -10,16 +10,20 @@ const VideoDisplay = ({ videoName, frames, bgColor, isQueryAndQnA }) => {
       </h2>
       <div className="flex flex-wrap gap-2 justify-center">
         {frames && frames.map((frame, index) => (
-          <FrameDisplay 
-            key={index} 
-            framePath={frame.path} 
-            bgColor={bgColor} 
-            videoName={videoName} 
-            fusedScore={frame.fusedScore}
-            allFrames={frames}
-            index={index}
-            isQueryAndQnA={isQueryAndQnA}
-          />
+          <div key={index} className="flex flex-col items-center">
+            <FrameDisplay 
+              framePath={frame.path} 
+              bgColor={bgColor} 
+              videoName={videoName} 
+              fusedScore={frame.fusedScore}
+              allFrames={frames}
+              index={index}
+              isQueryAndQnA={isQueryAndQnA}
+            />
+            {frame.highlight && (
+              <p className="text-xs mt-1 max-w-xs text-center">{frame.highlight}</p>
+            )}
+          </div>
         ))}
       </div>
     </div>

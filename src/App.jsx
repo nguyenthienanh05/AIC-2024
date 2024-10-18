@@ -40,7 +40,7 @@ function App() {
   };
 
   return (
-    <div className="mx-auto p-4">
+    <div className="container mx-auto my-3 px-4 sm:px-6 lg:px-8 max-w-7xl">
       <InputQueryForm
         onQueryResponse={handleQueryResponse}
         setIsLoading={setIsLoading}
