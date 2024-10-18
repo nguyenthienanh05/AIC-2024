@@ -26,29 +26,22 @@ from asgiref.wsgi import WsgiToAsgi
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
 from groq import Groq
+from elasticsearch import Elasticsearch
+import google.generativeai as genai
+
 
 load_dotenv()
 
 app = Flask(__name__)
-# CORS(app, resources={r"/ownData-Fusion": {
-#     "origins": ["http://localhost:5173", "http://localhost:1", "https://ai-challenge-2024-431017.web.app"],
-#     "methods": ["POST"],
-#     "allow_headers": ["Content-Type"]
-# }})
-# CORS(app, resources={r"/orgData-Fusion": {
-#     "origins": ["http://localhost:5173", "http://localhost:1", "https://ai-challenge-2024-431017.web.app"],
-#     "methods": ["POST"],
-#     "allow_headers": ["Content-Type"]
-# }})
 CORS(app, resources={r"/*": {
-    "origins": ["http://localhost:5173", "http://localhost:1", "https://ai-challenge-2024-431017.web.app"],
+    "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],  # Add your frontend URL
     "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allow_headers": ["Content-Type"]
+    "allow_headers": ["Content-Type", "Authorization"]
 }})
 
+
 # Set your Google API key
-GOOGLE_API_KEY = "AIzaSyD2h9AV-gzd5Nq162v28NaAIPIBFv61ldo"
-print(GOOGLE_API_KEY)
+GOOGLE_API_KEY = "AIzaSyBKE1DyZA-Eh_FBYc0D-cptJyGqHxljBl8"
 
 # Initialize Gemini LLM and Embedding models
 llm = Gemini(model="models/gemini-1.5-flash", api_key=GOOGLE_API_KEY)
@@ -71,7 +64,7 @@ def load_index_ownData_fusion():
     docstore = SimpleDocumentStore.from_persist_dir("./utils/saved_index_ownData_fusion")
 
     print("Loading vector store for ownData_fusion...")
-    vector_store = MilvusVectorStore(uri="https://in01-35c806597799c84.gcp-asia-southeast1.vectordb.zillizcloud.com/",
+    vector_store = MilvusVectorStore(uri="https://in01-6bc09d4d9f744a7.gcp-asia-southeast1.vectordb.zillizcloud.com:443",
                                      token="dec231063ca5597f1d08c044014f913f90d33081321531cc927284191475e57ed630784faa08ce8afacbdcac5fd76959a4b0574b",
                                      overwrite=False,
                                      collection_name="aic_2024_official_4")
@@ -117,6 +110,37 @@ def load_index_orgData_fusion():
     fusion_retriever2 = FusionRetriever([vector_retriever, bm25_retriever], similarity_top_k=200)
     # query_engine2 = RetrieverQueryEngine(retriever=fusion_retriever2)
 
+def enhanced_search(scene_description, keywords, index_name="docstore"):
+    query = {
+        "query": {
+            "bool": {
+                "should": [
+                    {"match_phrase": {"text": keyword}} for keyword in keywords
+                ] + [
+                    {"match": {"text": keyword}} for keyword in keywords
+                ],
+                "minimum_should_match": 3  # Giảm số lượng từ khóa cần thiết
+            }
+        },
+        "highlight": {
+            "fields": {
+                "text": {"number_of_fragments": 3}
+            }
+        }
+    }
+    
+    response = es.search(index=index_name, body=query, size=10)
+    
+    structured_results = []
+    for hit in response['hits']['hits']:
+        structured_results.append({
+            'source': hit['_source']['metadata']['source'],
+            'score': hit['_score'],
+            'highlight': ' ... '.join(hit['highlight']['text']) if 'highlight' in hit else hit['_source']['text'][:200]
+        })
+    
+    return structured_results
+
 @app.route("/")
 def hello_world():
     """Example Hello World route."""
@@ -140,12 +164,12 @@ async def perform_query_ownDatsa_Fusion():
         final_results = fusion_retriever._retrieve(query_bundle)
         fused_results = ""
 
-        print("response")
+        # print("response")
 
         for final_result in final_results:
             fused_results += f"Node Source: {final_result.node.metadata.get('source')}, Fused Score: {final_result.score}\n"
 
-        print(fused_results)
+        # print(fused_results)
         end_time = time.time()
         print(f"Time taken to execute query: {end_time - start_time:.2f} seconds")
         print("OWNDATA-FUSION SUCCESSFUL")
@@ -178,7 +202,7 @@ async def perform_query_ownDatsa_Fusion():
         )
 
         output_object = dict(sorted_data)
-        print(output_object)
+        # print(output_object)
         return jsonify(output_object)
     except Exception as e:
         app.logger.error(f"An error occurred while processing the query: {str(e)}")
@@ -203,12 +227,12 @@ async def perform_query_orgData_Fusion():
         final_results = fusion_retriever2._retrieve(query_bundle)
         fused_results = ""
 
-        print("response")
+        # print("response")
 
         for final_result in final_results:
             fused_results += f"Node Source: {final_result.node.metadata.get('source')}, Fused Score: {final_result.score}\n"
 
-        print(fused_results)
+        # print(fused_results)
         end_time = time.time()
         print(f"Time taken to execute query: {end_time - start_time:.2f} seconds")
         print("ORGDATA-FUSION SUCCESSFUL")
@@ -241,7 +265,7 @@ async def perform_query_orgData_Fusion():
         )
 
         output_object = dict(sorted_data)
-        print(output_object)
+        # print(output_object)
         return jsonify(output_object)
     except Exception as e:
         app.logger.error(f"An error occurred while processing the query: {str(e)}")
@@ -274,10 +298,73 @@ def set_bm25_weight_endpoint():
         app.logger.error(f"An error occurred while setting BM25 weight: {str(e)}")
         return jsonify({"error": "An error occurred while setting BM25 weight"}), 500
 
+@app.route('/elastic-search', methods=['POST'])
+def elastic_search():
+    data = request.get_json()
+    scene_description = data.get('query')
+    keywords = data.get('keywords')
+    print(keywords)
+    print(scene_description)
+    if not keywords:
+        return jsonify({"error": "No keywords provided"}), 400
+    try:
+        results = enhanced_search(scene_description, keywords)
+        print(results)
+        return jsonify(results)
+    except Exception as e:
+        app.logger.error(f"An error occurred while processing the elastic search: {str(e)}")
+        return jsonify({"error": "An internal server error occurred."}), 500
+
+@app.route('/generate-keywords', methods=['POST'])
+def generate_keywords():
+    data = request.get_json()
+    query = data.get('query')
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
+    try:
+        print(f"Received query: {query}")
+        genai.configure(api_key=GOOGLE_API_KEY)
+        model = genai.GenerativeModel("gemini-1.5-pro-002")
+        response = model.generate_content(f"""
+Given the following description, generate a list of 10-15 highly relevant and diverse keywords for use in Elastic Search. Analyze the query deeply, considering both explicit and implicit meanings, context, and potential search intents.
+
+Guidelines:
+1. Provide a mix of specific, unique terms and more general concepts that capture the essence of the scene, action, or topic.
+2. Include a balanced variety of nouns, verbs, adjectives, and short phrases (2-3 words).
+3. Capture semantic meanings, not just literal matches, considering synonyms and related terms.
+4. If describing a visual scene, include keywords related to visual attributes, colors, or spatial relationships.
+5. Include keywords for any actions, emotions, or atmosphere implied in the description.
+6. Consider domain-specific or technical terms if applicable to the context.
+7. Think about why someone might be searching for this content and include relevant terms.
+8. Prioritize keywords that are most likely to appear in relevant documents.
+9. Avoid overly generic terms unless they are crucial to the description.
+10. Rank the keywords by relevance, listing the most important ones first.
+
+Description: {query}
+
+Respond with a comma-separated list of 10-15 keywords, ordered by relevance, without any additional text or explanation.
+""")
+        keywords = [keyword.strip() for keyword in response.text.split(',')]
+        
+        if not keywords:
+            raise ValueError("No keywords generated")
+        
+        return jsonify({"keywords": keywords})
+    except Exception as e:
+        print(f"Error in generate_keywords: {str(e)}")
+        app.logger.error(f"An error occurred while generating keywords: {str(e)}")
+        return jsonify({"error": f"An error occurred while generating keywords: {str(e)}"}), 500
+
+
+
 if __name__ == '__main__':
     try:
         load_index_ownData_fusion()  # Load the index once when the application starts
-        load_index_orgData_fusion()  # Load the second index once when the application starts
+        # load_index_orgData_fusion()  # Load the second index once when the application starts
+        es = Elasticsearch(
+            cloud_id="aic:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyQwYzdmODhhM2IwOTU0YzMzYThlOWQ5MDk5NDFkYzMyZiRmZDE5NzE3NzM1NDQ0ZmFiOTc0MGQ3M2RmM2MwNjM5OQ==",
+            http_auth=("elastic", "Mt53bRFWhcLw3owm9twkfjSD")
+        )
     except ValueError as ve:
         print(f"Error: {str(ve)}")
         print("Please run the data ingestion process to populate Elasticsearch before starting the application.")
@@ -291,3 +378,18 @@ if __name__ == '__main__':
     config = Config()
     config.bind = ["0.0.0.0:8080"]
     asyncio.run(serve(asgi_app, config))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
