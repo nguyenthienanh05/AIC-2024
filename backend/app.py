@@ -56,6 +56,22 @@ loaded_index = None
 query_engine = None
 fusion_retriever = None
 
+# Initialize Milvus vector store
+vector_store = MilvusVectorStore(
+    uri="https://in01-6bc09d4d9f744a7.gcp-asia-southeast1.vectordb.zillizcloud.com:443",
+    token="dec231063ca5597f1d08c044014f913f90d33081321531cc927284191475e57ed630784faa08ce8afacbdcac5fd76959a4b0574b",
+    collection_name="aic_2024_official_4"
+)
+
+# Create StorageContext with vector store
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+# Create VectorStoreIndex
+index = VectorStoreIndex.from_vector_store(
+    vector_store,
+    storage_context=storage_context,
+)
+
 def load_index_ownData_fusion():
     global loaded_index, query_engine, fusion_retriever
     # print("Loading the saved index from Milvus...")
@@ -110,16 +126,17 @@ def load_index_orgData_fusion():
     fusion_retriever2 = FusionRetriever([vector_retriever, bm25_retriever], similarity_top_k=200)
     # query_engine2 = RetrieverQueryEngine(retriever=fusion_retriever2)
 
-def enhanced_search(scene_description, keywords, index_name="docstore"):
+def semantic_search(query_text, top_k=16000):
+    retriever = index.as_retriever(similarity_top_k=top_k)
+    nodes = retriever.retrieve(query_text)
+    return nodes
+
+def enhanced_search(keyword_groups, allowed_sources, index_name="docstore"):
     query = {
         "query": {
             "bool": {
-                "should": [
-                    {"match_phrase": {"text": keyword}} for keyword in keywords
-                ] + [
-                    {"match": {"text": keyword}} for keyword in keywords
-                ],
-                "minimum_should_match": 3  # Giảm số lượng từ khóa cần thiết
+                "must": [],
+                "should": []
             }
         },
         "highlight": {
@@ -129,17 +146,33 @@ def enhanced_search(scene_description, keywords, index_name="docstore"):
         }
     }
     
-    response = es.search(index=index_name, body=query, size=10)
+    for group in keyword_groups:
+        if len(group) == 1:
+            query["query"]["bool"]["should"].extend([
+                {"match_phrase": {"text": group[0]}},
+                {"match": {"text": group[0]}}
+            ])
+        else:
+            synonym_query = {
+                "bool": {
+                    "should": [
+                        {"match_phrase": {"text": word}} for word in group
+                    ] + [
+                        {"match": {"text": word}} for word in group
+                    ]
+                }
+            }
+            query["query"]["bool"]["should"].append(synonym_query)
     
-    structured_results = []
-    for hit in response['hits']['hits']:
-        structured_results.append({
-            'source': hit['_source']['metadata']['source'],
-            'score': hit['_score'],
-            'highlight': ' ... '.join(hit['highlight']['text']) if 'highlight' in hit else hit['_source']['text'][:200]
+    query["query"]["bool"]["minimum_should_match"] = 1
+    
+    if allowed_sources:
+        query["query"]["bool"]["must"].append({
+            "terms": {"metadata.source.keyword": allowed_sources}
         })
     
-    return structured_results
+    response = es.search(index=index_name, body=query, size=100)
+    return response['hits']['hits']
 
 @app.route("/")
 def hello_world():
@@ -299,21 +332,40 @@ def set_bm25_weight_endpoint():
         return jsonify({"error": "An error occurred while setting BM25 weight"}), 500
 
 @app.route('/elastic-search', methods=['POST'])
-def elastic_search():
+def perform_elastic_search():
     data = request.get_json()
-    scene_description = data.get('query')
-    keywords = data.get('keywords')
-    print(keywords)
-    print(scene_description)
-    if not keywords:
-        return jsonify({"error": "No keywords provided"}), 400
+    query = data.get('query')
+    keywords = data.get('keywords', [])
+
+    if not query or not keywords:
+        return jsonify({"error": "No query or keywords provided"}), 400
+
     try:
-        results = enhanced_search(scene_description, keywords)
-        print(results)
-        return jsonify(results)
+        # Perform semantic search
+        milvus_results = semantic_search(query)
+        allowed_sources = [f"downloaded/description/{node.metadata['source']}" for node in milvus_results if 'source' in node.metadata]
+
+        # Prepare keyword groups
+        keyword_groups = [[keyword] for keyword in keywords]
+
+        # Perform enhanced search
+        results = enhanced_search(keyword_groups, allowed_sources)
+
+        # Process and format the results
+        formatted_results = []
+        for hit in results:
+            formatted_result = {
+                "source": hit['_source']['metadata']['source'],
+                "score": hit['_score'],
+                "highlight": ' ... '.join(hit['highlight']['text']) if 'highlight' in hit else hit['_source']['text'][:200]
+            }
+            formatted_results.append(formatted_result)
+
+        return jsonify(formatted_results)
+
     except Exception as e:
-        app.logger.error(f"An error occurred while processing the elastic search: {str(e)}")
-        return jsonify({"error": "An internal server error occurred."}), 500
+        print("Error:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/generate-keywords', methods=['POST'])
 def generate_keywords():
@@ -378,6 +430,8 @@ if __name__ == '__main__':
     config = Config()
     config.bind = ["0.0.0.0:8080"]
     asyncio.run(serve(asgi_app, config))
+
+
 
 
 
