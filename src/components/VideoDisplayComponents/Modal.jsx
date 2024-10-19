@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import ModalHeader from './ModalHeader';
-import VideoControls from './VideoControls';
-import QueryAndQnAContent from './QueryAndQnAContent';
-import AdditionalQnAContent from './AdditionalQnAContent';
-import SubmissionControls from './SubmissionControls';
+import React, { useState, useRef, useEffect } from "react";
+import PropTypes from "prop-types";
+import ModalHeader from "./ModalHeader";
+import VideoControls from "./VideoControls";
+import QueryAndQnAContent from "./QueryAndQnAContent";
+import AdditionalQnAContent from "./AdditionalQnAContent";
+import SubmissionControls from "./SubmissionControls";
 
 const Modal = ({
   children,
@@ -29,20 +29,21 @@ const Modal = ({
   const [isCopied, setIsCopied] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState(timestamp);
   const [tempFrameIndex, setTempFrameIndex] = useState(Number(frameIndex));
-  const [range, setRange] = useState(2000);
-  const [evaluationIdKis] = useState("3b1c6888-f0c7-412a-b21f-813d07b2e914");
-  const [evaluationIdQnA] = useState("3b1c6888-f0c7-412a-b21f-813d07b2e914");
-  const [sessionId] = useState("BosQ9K3hJLGBwB909-Pn0dxXjXuR6EHL");
+  const [range, setRange] = useState(1000);
+  const [evaluationIdKis] = useState("69ec2262-d829-4ac1-94a2-1aa0a6693266");
+  const [evaluationIdQnA] = useState("bec3b699-bdea-4f2c-94ae-61ee065fa76e");
+  const [sessionId] = useState("n3q-d82-hihH1Jedq3hDd2w62ipTxsO6");
   const [submissionStatus, setSubmissionStatus] = useState(null);
   const [qnaSubmissionStatus, setQnaSubmissionStatus] = useState(null);
   const videoRef = useRef(null);
 
   const handleSubmit = async () => {
     setSubmissionStatus("submitting");
-    const calculatedStartTime = Math.max(0, currentVideoTime * 1000 - range);
-    const calculatedEndTime = Math.min(
-      currentVideoTime * 1000 + range,
-      videoRef.current?.duration || Infinity
+    const calculatedStartTime = Math.floor(
+      Math.max(0, currentVideoTime * 1000 - range)
+    );
+    const calculatedEndTime = Math.floor(
+      Math.min(currentVideoTime * 1000 + range, videoRef.current?.duration)
     );
 
     const body = {
@@ -67,7 +68,7 @@ const Modal = ({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionId}`, // Add this line
+            Authorization: `Bearer ${sessionId}`,
           },
           body: JSON.stringify(body),
         }
@@ -77,15 +78,12 @@ const Modal = ({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log("Submission successful:", data);
       setSubmissionStatus("success");
-      // You can add further handling of the response here
+      return response;
     } catch (error) {
       console.error("Error submitting answer:", error);
       setSubmissionStatus("error");
-      // Add user feedback here, e.g.:
-      alert("Failed to submit answer. Please try again.");
+      throw error;
     }
   };
 
@@ -179,13 +177,12 @@ const Modal = ({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log("Q&A Submission successful:", data);
       setQnaSubmissionStatus("success");
+      return response;
     } catch (error) {
       console.error("Error submitting Q&A answer:", error);
       setQnaSubmissionStatus("error");
-      alert("Failed to submit Q&A answer. Please try again.");
+      throw error;
     }
   };
 

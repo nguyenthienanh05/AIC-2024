@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { FaCheck, FaTimes, FaPaperPlane } from 'react-icons/fa';
 import ConfirmationModal from './ConfirmationModal';
+import ResultModal from './ResultModal';
 
 const SubmissionControls = ({
   range,
@@ -16,6 +17,8 @@ const SubmissionControls = ({
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [submissionType, setSubmissionType] = useState('range');
   const [answer, setAnswer] = useState('');
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [resultModalData, setResultModalData] = useState({});
 
   const openConfirmation = (type) => {
     setSubmissionType(type);
@@ -26,17 +29,37 @@ const SubmissionControls = ({
     setIsConfirmationOpen(false);
   };
 
-  const confirmSubmit = () => {
+  const confirmSubmit = async () => {
     closeConfirmation();
-    if (submissionType === 'range') {
-      handleSubmit();
-    } else {
-      handleQnASubmit(answer);
+    let response;
+    try {
+      if (submissionType === 'range') {
+        response = await handleSubmit();
+      } else {
+        response = await handleQnASubmit(answer);
+      }
+
+      const data = await response.json();
+      console.log("Query result:", data); // Add this line to log the query result
+
+      setResultModalData({
+        status: data.status ? 'success' : 'error',
+        submission: data.submission || '',
+        description: data.description || 'No description provided'
+      });
+    } catch (error) {
+      console.error("Error during submission:", error);
+      setResultModalData({
+        status: 'error',
+        submission: '',
+        description: 'An error occurred during submission. Please try again.'
+      });
     }
+    setIsResultModalOpen(true);
   };
 
-  const calculatedStartTime = Math.max(0, currentVideoTime * 1000 - range);
-  const calculatedEndTime = currentVideoTime * 1000 + range;
+  const calculatedStartTime = Math.floor(Math.max(0, currentVideoTime * 1000 - range));
+  const calculatedEndTime = Math.floor(currentVideoTime * 1000 + range);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mt-4 transition-all duration-300 ease-in-out">
@@ -113,6 +136,13 @@ const SubmissionControls = ({
         endTime={calculatedEndTime}
         answer={answer}
         submissionType={submissionType}
+      />
+      <ResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => setIsResultModalOpen(false)}
+        status={resultModalData.status}
+        submission={resultModalData.submission}
+        description={resultModalData.description}
       />
     </div>
   );
