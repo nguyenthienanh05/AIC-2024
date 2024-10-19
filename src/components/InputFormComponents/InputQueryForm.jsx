@@ -140,7 +140,7 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
   const handleElasticSearch = async (keywords) => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8080/elastic-search", {
+      const response = await fetch("http://localhost:8080/elastic-search-v2", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -177,7 +177,7 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
       const fps = fileNameParts[7].substring(0, 2);
       const path = `${videoName}/scene/${videoName}_frame_${fileNameParts[4]}_${fileNameParts[5]}_${fileNameParts[6]}_${fileNameParts[7].substring(0, 4)}.png`
       const frameIndex = Math.floor(fps * time / 1000);
-      console.log(videoName, path, frameIndex)
+      // console.log(videoName, path, frameIndex)
       if (!processedResults[videoName]) {
         processedResults[videoName] = [];
       }
@@ -232,6 +232,36 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
     } catch (error) {
       console.error("Error generating keywords:", error);
       alert(`Failed to generate keywords. ${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleElasticSearchV1 = async (keywords) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:8080/elastic-search-v1", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ keywords, query: currentSceneQuery }),
+      });
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      const processedData = processElasticSearchResults(data);
+      console.log(processedData)
+      onQueryResponse({
+        isQueryAndQnA: false,
+        ...processedData,
+      });
+    } catch (error) {
+      console.error("Error:", error);
+      alert(
+        "An error occurred while performing the elastic search. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -302,6 +332,11 @@ const InputQueryForm = ({ onQueryResponse, setIsLoading }) => {
           onElasticSearch={(newKeywords) => {
             setKeywords(newKeywords);
             handleElasticSearch(newKeywords);
+            setIsKeywordModalOpen(false);
+          }}
+          onElasticSearchV1={(newKeywords) => {
+            setKeywords(newKeywords);
+            handleElasticSearchV1(newKeywords);
             setIsKeywordModalOpen(false);
           }}
           query={currentSceneQuery}

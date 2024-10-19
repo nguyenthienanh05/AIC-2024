@@ -131,7 +131,38 @@ def semantic_search(query_text, top_k=16000):
     nodes = retriever.retrieve(query_text)
     return nodes
 
-def enhanced_search(keyword_groups, allowed_sources, index_name="docstore"):
+def enhanced_search_v1(scene_description, keywords, index_name="docstore"):
+    query = {
+        "query": {
+            "bool": {
+                "should": [
+                    {"match_phrase": {"text": keyword}} for keyword in keywords
+                ] + [
+                    {"match": {"text": keyword}} for keyword in keywords
+                ],
+                "minimum_should_match": 3  # Giảm số lượng từ khóa cần thiết
+            }
+        },
+        "highlight": {
+            "fields": {
+                "text": {"number_of_fragments": 3}
+            }
+        }
+    }
+    
+    response = es.search(index=index_name, body=query, size=10)
+    
+    structured_results = []
+    for hit in response['hits']['hits']:
+        structured_results.append({
+            'source': hit['_source']['metadata']['source'],
+            'score': hit['_score'],
+            'highlight': ' ... '.join(hit['highlight']['text']) if 'highlight' in hit else hit['_source']['text'][:200]
+        })
+    
+    return structured_results
+
+def enhanced_search_v2(keyword_groups, allowed_sources, index_name="docstore"):
     query = {
         "query": {
             "bool": {
@@ -330,9 +361,27 @@ def set_bm25_weight_endpoint():
     except Exception as e:
         app.logger.error(f"An error occurred while setting BM25 weight: {str(e)}")
         return jsonify({"error": "An error occurred while setting BM25 weight"}), 500
+    
+@app.route('/elastic-search-v1', methods=['POST'])
+def perform_elastic_search_v1():
+    data = request.get_json()
+    scene_description = data.get('query')
+    keywords = data.get('keywords')
+    print(keywords)
+    print(scene_description)
+    if not keywords:
+        return jsonify({"error": "No keywords provided"}), 400
+    try:
+        results = enhanced_search_v1(scene_description, keywords)
+        print(results)
+        return jsonify(results)
+    except Exception as e:
+        app.logger.error(f"An error occurred while processing the elastic search: {str(e)}")
+        return jsonify({"error": "An internal server error occurred."}), 500
 
-@app.route('/elastic-search', methods=['POST'])
-def perform_elastic_search():
+
+@app.route('/elastic-search-v2', methods=['POST'])
+def perform_elastic_search_v2():
     data = request.get_json()
     query = data.get('query')
     keywords = data.get('keywords', [])
@@ -349,7 +398,7 @@ def perform_elastic_search():
         keyword_groups = [[keyword] for keyword in keywords]
 
         # Perform enhanced search
-        results = enhanced_search(keyword_groups, allowed_sources)
+        results = enhanced_search_v2(keyword_groups, allowed_sources)
 
         # Process and format the results
         formatted_results = []

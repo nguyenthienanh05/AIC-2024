@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-const KeywordModal = ({ keywords, onClose, onElasticSearch, query }) => {
+const KeywordModal = ({ keywords, onClose, onElasticSearch, onElasticSearchV1, query }) => {
   const [editedKeywords, setEditedKeywords] = useState(keywords);
 
   const handleKeywordChange = (index, value) => {
@@ -27,10 +27,16 @@ const KeywordModal = ({ keywords, onClose, onElasticSearch, query }) => {
         </div>
         <div className="flex justify-end space-x-2">
           <button
+            onClick={() => onElasticSearchV1(editedKeywords, query)}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Elastic Search V1
+          </button>
+          <button
             onClick={() => onElasticSearch(editedKeywords, query)}
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           >
-            Elastic Search
+            Elastic Search V2
           </button>
           <button
             onClick={onClose}
@@ -48,6 +54,7 @@ KeywordModal.propTypes = {
   keywords: PropTypes.array.isRequired,
   onClose: PropTypes.func.isRequired,
   onElasticSearch: PropTypes.func.isRequired,
+  onElasticSearchV1: PropTypes.func.isRequired,
   query: PropTypes.string.isRequired,
 };
 
