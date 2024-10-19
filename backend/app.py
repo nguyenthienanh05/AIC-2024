@@ -60,7 +60,7 @@ fusion_retriever = None
 vector_store = MilvusVectorStore(
     uri="https://in01-6bc09d4d9f744a7.gcp-asia-southeast1.vectordb.zillizcloud.com:443",
     token="dec231063ca5597f1d08c044014f913f90d33081321531cc927284191475e57ed630784faa08ce8afacbdcac5fd76959a4b0574b",
-    collection_name="aic_2024_official_4"
+    collection_name="ke_giet_chet_aic2024"
 )
 
 # Create StorageContext with vector store
@@ -83,7 +83,7 @@ def load_index_ownData_fusion():
     vector_store = MilvusVectorStore(uri="https://in01-6bc09d4d9f744a7.gcp-asia-southeast1.vectordb.zillizcloud.com:443",
                                      token="dec231063ca5597f1d08c044014f913f90d33081321531cc927284191475e57ed630784faa08ce8afacbdcac5fd76959a4b0574b",
                                      overwrite=False,
-                                     collection_name="aic_2024_official_4")
+                                     collection_name="ke_giet_chet_aic2024")
 
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     loaded_index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
@@ -109,7 +109,7 @@ def load_index_orgData_fusion():
     vector_store = MilvusVectorStore(uri="https://in01-6bc09d4d9f744a7.gcp-asia-southeast1.vectordb.zillizcloud.com:443",
                                      token="dec231063ca5597f1d08c044014f913f90d33081321531cc927284191475e57ed630784faa08ce8afacbdcac5fd76959a4b0574b",
                                      overwrite=False,
-                                     collection_name="aic_2024_official_4")
+                                     collection_name="ke_giet_chet_aic2024")
 
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     loaded_index2 = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)

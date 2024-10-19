@@ -5,8 +5,8 @@ import VideoPlayer from "./VideoPlayer";
 
 const FrameDisplay = ({ framePath, bgColor, videoName, fusedScore, allFrames, index, isQueryAndQnA }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const BASE_URL_FRAME = "https://storage.googleapis.com/aic_videos_data/";
-  const BASE_URL_VIDEO = "https://storage.googleapis.com/aic_videos_2024/";
+  const BASE_URL_FRAME = "https://storage.googleapis.com/aic_final_2024/";
+  const BASE_URL_VIDEO = "https://storage.googleapis.com/aic_final_2024/";
 
   const extractNumbers = (path) => {
     const match = path.match(/frame_(\d{4})_(\d+)_(\d+)_(\d{4})\.png/);
