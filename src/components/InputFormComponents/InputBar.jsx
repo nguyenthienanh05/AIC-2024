@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 
-const InputBar = ({ placeholder, bgColor, value, onChange, required }) => {
+const InputBar = ({ placeholder, value, onChange, onKeyDown, required, className }) => {
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const InputBar = ({ placeholder, bgColor, value, onChange, required }) => {
   };
 
   return (
-    <div className="relative mb-1">
+    <div className="relative w-full">
       <textarea
         ref={textareaRef}
         value={value}
@@ -33,15 +33,16 @@ const InputBar = ({ placeholder, bgColor, value, onChange, required }) => {
           onChange(e);
           handleInputChange(e);
         }}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         aria-label="Query input"
-        className={`w-full min-h-[80px] px-6 py-4 text-lg ${bgColor} rounded-[30px] border-[3px] border-black focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-500 resize-none overflow-hidden pr-10`}
+        className={`w-full min-h-[60px] px-4 py-3 text-lg bg-white rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-colors duration-200 ease-in-out placeholder-gray-400 resize-none overflow-hidden pr-10 ${className}`}
         required={required}
       />
       {value && (
         <button
           onClick={handleClear}
-          className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+          className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200 ease-in-out"
           aria-label="Clear input"
         >
           <svg
@@ -65,8 +66,10 @@ const InputBar = ({ placeholder, bgColor, value, onChange, required }) => {
 InputBar.propTypes = {
   placeholder: PropTypes.string,
   bgColor: PropTypes.string,
+  className: PropTypes.string,
   value: PropTypes.string,
   onChange: PropTypes.func,
+  onKeyDown: PropTypes.func,
   required: PropTypes.bool,
 };
 

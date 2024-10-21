@@ -1,0 +1,17 @@
+flask
+flask-cors
+llama-index
+llama-index-llms-gemini
+llama-index-embeddings-gemini
+llama-index-retrievers-bm25
+google-cloud-storage
+typing
+gunicorn
+llama-index-vector-stores-milvus
+pymilvus
+nest-asyncio
+elasticsearch
+asgiref
+hypercorn
+
+groq
